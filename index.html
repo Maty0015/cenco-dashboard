@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CENCO - Carabineros de Chile</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🛡️</text></svg>">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="wrapper-plataforma" style="display: none;">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="escudo-icon">🛡️</div>
+                <div>
+                    <h3>CENCO</h3>
+                    <p>Carabineros de Chile</p>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="#" id="menu-panel" class="active">📊 Panel de Control</a>
+                <a href="#" id="menu-denuncias">🚨 Denuncias Recibidas <span class="badge">3</span></a>
+                <a href="#" id="menu-videos">📹 Gestión Videollamadas <span class="badge">1</span></a>
+                <a href="#" id="menu-patrullas">🚔 Derivación Patrullas</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="perfil-operador">
+                    <div class="avatar">S1</div>
+                    <div>
+                        <h4>Sargento 1ro Pérez</h4>
+                        <p>Operador LSCh</p>
+                    </div>
+                </div>
+                <a href="#" id="btn-logout" class="logout-link">➔ Cerrar Sesión</a>
+            </div>
+        </aside>
+
+        <main class="main-dashboard" id="cuerpo-dashboard">
+        </main>
+    </div>
+
+    <div id="wrapper-login" class="login-screen">
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+</body>
+</html>

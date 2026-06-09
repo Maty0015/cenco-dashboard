@@ -1,0 +1,235 @@
+:root {
+    --verde-carabinero: #004d35;
+    --verde-hover: #003625;
+    --bg-gris: #f4f6f8;
+    --texto-oscuro: #1e293b;
+    --texto-mutado: #64748b;
+    --rojo-critico: #ff4757;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+    background-color: var(--bg-gris);
+    color: var(--texto-oscuro);
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* 🏢 DISPOSICIÓN DEL INTERFAZ SPA */
+#wrapper-plataforma {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* 🟢 BARRA LATERAL (SIDEBAR) ASIDE */
+.sidebar {
+    width: 280px;
+    background-color: var(--verde-carabinero);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px;
+    height: 100%;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.escudo-icon {
+    font-size: 2rem;
+}
+
+.sidebar-header h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.sidebar-header p {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.sidebar-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 25px;
+    flex-grow: 1;
+}
+
+.sidebar-menu a {
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    padding: 12px 15px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.sidebar-menu a:hover, .sidebar-menu a.active {
+    background-color: rgba(255,255,255,0.15);
+    color: white;
+}
+
+.sidebar-menu a.active {
+    background-color: white;
+    color: var(--verde-carabinero);
+}
+
+.badge {
+    background-color: var(--rojo-critico);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.sidebar-footer {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 15px;
+}
+
+.perfil-operador {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    background-color: white;
+    color: var(--verde-carabinero);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.logout-link {
+    color: rgba(255,255,255,0.6);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.logout-link:hover {
+    color: var(--rojo-critico);
+}
+
+/* 💻 CONTENEDOR ELÁSTICO DE LAS VISTAS */
+.main-dashboard {
+    flex-grow: 1;
+    padding: 30px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* 🔐 VENTANA DE AUTENTICACIÓN (LOGIN) */
+.login-screen {
+    background-color: var(--verde-carabinero);
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-card {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.form-group input {
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 14px;
+    background-color: var(--verde-carabinero);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-submit:hover {
+    background-color: var(--verde-hover);
+}
+
+/* 📊 INTERFAZ CARDS PANELS */
+.grid-indicadores {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.card-indicador {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.card-content h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-top: 2px;
+}
