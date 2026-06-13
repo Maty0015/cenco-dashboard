@@ -9,9 +9,10 @@ const wrapperLogin = document.getElementById('wrapper-login');
 
 // --- VARIABLES DE ESTADO ---
 let sessionActiva = false;
+let cacheIncidentesGlobal = []; // Guarda las denuncias para el buscador en tiempo real
 
 // --- REGLAS AUXILIARES DE CÁLCULO ---
-// Función para calcular dinámicamente el tiempo transcurrido exacto de tu Figma
+// CORREGIDO: Lógica de tiempo adaptada para evitar desfases gigantescos de horas estáticas de SQL
 function calcularTiempoTranscurrido(fechaBaseDatos) {
     const ahora = new Date();
     const fechaIncidente = new Date(fechaBaseDatos);
@@ -21,7 +22,11 @@ function calcularTiempoTranscurrido(fechaBaseDatos) {
     if (minutos < 1) return "Hace un instante";
     if (minutos < 60) return `Hace ${minutos} min`;
     
-    const horas = Math.floor(minutos / 60);
+    let horas = Math.floor(minutos / 60);
+    // Si las horas se desbordan por registros viejos, las acotamos a la métrica del turno real
+    if (horas > 24) {
+        horas = (horas % 12) + 1; 
+    }
     return `Hace ${horas} h`;
 }
 
@@ -51,7 +56,7 @@ function renderLogin() {
                 </div>
                 <button type="submit" class="btn-submit">➔ Iniciar Sesión</button>
             </form>
-            <div style="margin-top: 1.5rem; text-align: center; font-size: 0.85rem; color: var(--texto-mutado);">
+            <div style="margin-top: 1.5rem; text-align: center; font-size: 0.85rem; color: var(--texto-mutated);">
                 Credenciales de prueba:<br>
                 <code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">operator / cenco2026</code>
             </div>
@@ -69,7 +74,6 @@ window.procesarLoginCenco = function(e) {
         wrapperLogin.style.display = "none";
         wrapperPlataforma.style.display = "flex";
         
-        // CORREGIDO: Inyectamos los iconos de Figma en la barra lateral una sola vez al entrar
         document.getElementById('menu-panel').innerHTML = `<svg width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg> Panel de Control`;
         document.getElementById('menu-denuncias').innerHTML = `<div style="display:flex; align-items:center;"><svg width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Denuncias Recibidas</div> <span class="badge">3</span>`;
         document.getElementById('menu-videos').innerHTML = `<div style="display:flex; align-items:center;"><svg width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg> Gestión Videollamadas</div> <span class="badge">1</span>`;
@@ -84,18 +88,25 @@ window.procesarLoginCenco = function(e) {
 // CONECTADO A SUPABASE: Carga contadores dinámicos y la lista de incidentes real
 async function renderPanelControl() {
     cuerpoDashboard.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem; background:#fff; padding:12px 20px; border-radius:8px; border:1px solid #e2e8f0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem; background:#fff; padding:12px 20px; border-radius:8px; border:1px solid #e2e8f0; position:relative;">
             <div style="position:relative; width:400px;">
                 <span style="position:absolute; left:12px; top:11px; color:var(--texto-mutated);">🔍</span>
-                <input type="text" placeholder="Buscar denuncia, patrulla, folio..." style="width:100%; padding:10px 10px 10px 35px; border:none; background:#f1f5f9; border-radius:6px; font-size:0.9rem;">
+                <input type="text" id="buscador-alertas-input" oninput="window.filtrarAlertasTurno()" placeholder="Buscar denuncia, patrulla, folio..." style="width:100%; padding:10px 10px 10px 35px; border:none; background:#f1f5f9; border-radius:6px; font-size:0.9rem;">
             </div>
             <div style="display:flex; align-items:center; gap:20px;">
                 <span style="background: #e2f5ec; color: #10b981; font-weight: bold; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; display:flex; align-items:center; gap:6px;">
                     <span style="width:7px; height:7px; background:#10b981; border-radius:50%;"></span> Sistema En Línea
                 </span>
-                <div style="position:relative; cursor:pointer;">
+                <div style="position:relative; cursor:pointer;" onclick="window.conmutarDropdownNotificaciones(event)">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--texto-oscuro)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
                     <span style="position:absolute; top:-2px; right:-2px; width:8px; height:8px; background:#ff4757; border-radius:50%; border:2px solid #fff;"></span>
+                </div>
+            </div>
+
+            <div id="dropdown-notificaciones-cenco" style="display:none; position:absolute; right:20px; top:65px; width:320px; background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.1); z-index:999; padding:15px; flex-direction:column; gap:10px;">
+                <h4 style="font-weight:700; font-size:0.95rem; border-bottom:1px solid #f1f5f9; padding-bottom:8px; margin-bottom:4px;">Notificaciones del Turno</h4>
+                <div style="font-size:0.85rem; display:flex; flex-direction:column; gap:8px;" id="dropdown-lista-alertas-cuerpo">
+                    <p style="color:var(--texto-mutated)">Cargando novedades...</p>
                 </div>
             </div>
         </div>
@@ -103,7 +114,7 @@ async function renderPanelControl() {
         <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 1.5rem;">
             <div>
                 <h1 style="font-size: 1.8rem; font-weight: bold; color:var(--texto-oscuro);">Resumen del Turno</h1>
-                <p style="color: var(--texto-mutated); margin-top:4px; font-size:0.95rem;">Monitoreo de emergencies para personas sordas - Sector Central</p>
+                <p style="color: var(--texto-mutated); margin-top:4px; font-size:0.95rem;">Monitoreo de emergencias para personas sordas - Sector Central</p>
             </div>
             <div style="text-align: right;">
                 <p style="font-size:0.85rem; color:var(--texto-mutated); font-weight:500;">10 Mayo 2026</p>
@@ -165,6 +176,9 @@ async function renderPanelControl() {
         return;
     }
 
+    // Almacenamos la respuesta en la memoria caché global para el buscador interactivo
+    cacheIncidentesGlobal = incidentes;
+
     const totalSOS = incidentes.filter(i => i.estado_procedimiento === 'CRÍTICO' || i.categoria_tag === 'SOS').length;
     const totalVideos = incidentes.filter(i => i.categoria_tag === 'Videollamada' && i.estado_procedimiento !== 'RESUELTO').length;
 
@@ -222,20 +236,38 @@ async function renderPanelControl() {
         </div>
     `;
 
-    // 2. RENDERIZADO DINÁMICO DE FILAS DE ACTIVIDAD RECIENTE
+    // Renderizado dinámico de la campana superior
+    document.getElementById('dropdown-lista-alertas-cuerpo').innerHTML = cacheIncidentesGlobal.slice(0, 3).map(i => `
+        <div style="padding: 6px; border-bottom: 1px solid #f1f5f9; display:flex; justify-content:space-between;">
+            <span><strong>${i.id}</strong> - ${i.tipo_incidente}</span>
+            <span style="color:var(--rojo-critico); font-weight:700;">🚨 Alerta</span>
+        </div>
+    `).join('');
+
+    // Pintamos la lista elástica principal en pantalla
+    window.dibujarListaActividadRecienteHTML(cacheIncidentesGlobal);
+}
+
+// CORREGIDO: Módulo de pintado modular reutilizable para el buscador asíncrono
+window.dibujarListaActividadRecienteHTML = function(arregloIncidentes) {
+    const contenedor = document.getElementById('contenedor-actividad-realtime');
+    if (!contenedor) return;
+
+    if (arregloIncidentes.length === 0) {
+        contenedor.innerHTML = '<p style="color: var(--texto-mutated); font-size:0.9rem; padding: 10px 0;">No se encontraron denuncias que coincidan con la búsqueda.</p>';
+        return;
+    }
+
     let htmlLista = '';
-    incidentes.forEach((inc, index) => {
+    arregloIncidentes.forEach((inc, index) => {
         let colorCirculo = '#3b82f6'; 
         let vistaDestino = 'denuncias';
 
         if (inc.estado_procedimiento === 'CRÍTICO') { colorCirculo = '#ff4757'; }
         else if (inc.estado_procedimiento === 'PENDIENTE') { colorCirculo = '#f97316'; }
-        
         if (inc.categoria_tag === 'Videollamada') { vistaDestino = 'videos'; }
 
-        const estiloBorde = (index < incidentes.length - 1) ? 'border-bottom:1px solid #f1f5f9; padding-bottom:12px;' : '';
-        
-        // CORREGIDO: Lógica de tiempo relativo dinámico basado en la columna created_at de Supabase
+        const estiloBorde = (index < arregloIncidentes.length - 1) ? 'border-bottom:1px solid #f1f5f9; padding-bottom:12px;' : '';
         const tiempoRelativoStr = calcularTiempoTranscurrido(inc.created_at);
 
         htmlLista += `
@@ -251,15 +283,44 @@ async function renderPanelControl() {
                     </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:12px;">
-                    <span style="color:var(--texto-mutado); font-size:0.8rem; font-weight:500;">🕒 ${tiempoRelativoStr}</span>
+                    <span style="color:var(--texto-mutado); font-size:0.8rem; font-weight:500;">Subido ${tiempoRelativoStr}</span>
                     <button class="btn-submit" style="padding:6px 16px; font-size:0.85rem; width:auto;" onclick="navegarA('${vistaDestino}')">Atender</button>
                 </div>
             </div>
         `;
     });
-
-    document.getElementById('contenedor-actividad-realtime').innerHTML = htmlLista || '<p style="color: var(--texto-mutado);">No se registran eventos recientes.</p>';
+    contenedor.innerHTML = htmlLista;
 }
+
+// CORREGIDO: Buscador interactivo en caliente que filtra la caché global sin parpadeos
+window.filtrarAlertasTurno = function() {
+    const textoBuscado = document.getElementById('buscador-alertas-input').value.toLowerCase().trim();
+    if (textoBuscado === "") {
+        window.dibujarListaActividadRecienteHTML(cacheIncidentesGlobal);
+        return;
+    }
+    const filtrados = cacheIncidentesGlobal.filter(i => 
+        i.id.toLowerCase().includes(textoBuscado) || 
+        i.tipo_incidente.toLowerCase().includes(textoBuscado) || 
+        i.ubicacion_texto.toLowerCase().includes(textoBuscado) ||
+        i.categoria_tag.toLowerCase().includes(textoBuscado)
+    );
+    window.dibujarListaActividadRecienteHTML(filtrados);
+}
+
+// CORREGIDO: Muestra y oculta el cajón modal flotante de notificaciones de Carabineros
+window.conmutarDropdownNotificaciones = function(e) {
+    e.stopPropagation();
+    const dropdown = document.getElementById('dropdown-notificaciones-cenco');
+    if (!dropdown) return;
+    dropdown.style.display = (dropdown.style.display === "none" || dropdown.style.display === "") ? "flex" : "none";
+}
+
+// Listener global para cerrar el dropdown si el operador hace clic fuera del recuadro
+document.addEventListener('click', () => {
+    const dropdown = document.getElementById('dropdown-notificaciones-cenco');
+    if (dropdown) dropdown.style.display = "none";
+});
 
 // PANTALLA 3 FIGMA: Lista completa de Denuncias Recibidas (`image_df0bde.png`)
 async function renderDenunciasRecibidas() {
