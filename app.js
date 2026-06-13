@@ -9,10 +9,9 @@ const wrapperLogin = document.getElementById('wrapper-login');
 
 // --- VARIABLES DE ESTADO ---
 let sessionActiva = false;
-let cacheIncidentesGlobal = []; // Guarda las denuncias para el buscador en tiempo real
+let cacheIncidentesGlobal = []; 
 
 // --- REGLAS AUXILIARES DE CÁLCULO ---
-// CORREGIDO: Lógica de tiempo adaptada para evitar desfases gigantescos de horas estáticas de SQL
 function calcularTiempoTranscurrido(fechaBaseDatos) {
     const ahora = new Date();
     const fechaIncidente = new Date(fechaBaseDatos);
@@ -23,11 +22,36 @@ function calcularTiempoTranscurrido(fechaBaseDatos) {
     if (minutos < 60) return `Hace ${minutos} min`;
     
     let horas = Math.floor(minutos / 60);
-    // Si las horas se desbordan por registros viejos, las acotamos a la métrica del turno real
     if (horas > 24) {
         horas = (horas % 12) + 1; 
     }
     return `Hace ${horas} h`;
+}
+
+// BARRA DE CABECERA UNIFICADA DE FIGMA (Reutilizable para mantener consistencia visual)
+function generarEstructuraCabeceraGlobal() {
+    return `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem; background:#fff; padding:12px 20px; border-radius:8px; border:1px solid #e2e8f0; position:relative; width:100%;">
+            <div style="position:relative; width:400px;">
+                <span style="position:absolute; left:12px; top:11px; color:var(--texto-mutated);">🔍</span>
+                <input type="text" id="buscador-alertas-input" oninput="window.filtrarAlertasTurno()" placeholder="Buscar denuncia, patrulla, folio..." style="width:100%; padding:10px 10px 10px 35px; border:none; background:#f1f5f9; border-radius:6px; font-size:0.9rem;">
+            </div>
+            <div style="display:flex; align-items:center; gap:20px;">
+                <span style="background: #e2f5ec; color: #10b981; font-weight: bold; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; display:flex; align-items:center; gap:6px;">
+                    <span style="width:7px; height:7px; background:#10b981; border-radius:50%;"></span> Sistema En Línea
+                </span>
+                <div style="position:relative; cursor:pointer;" onclick="window.conmutarDropdownNotificaciones(event)">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--texto-oscuro)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                    <span style="position:absolute; top:-2px; right:-2px; width:8px; height:8px; background:#ff4757; border-radius:50%; border:2px solid #fff;"></span>
+                </div>
+            </div>
+
+            <div id="dropdown-notificaciones-cenco" style="display:none; position:absolute; right:20px; top:65px; width:320px; background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.1); z-index:999; padding:15px; flex-direction:column; gap:10px;">
+                <h4 style="font-weight:700; font-size:0.95rem; border-bottom:1px solid #f1f5f9; padding-bottom:8px; margin-bottom:4px;">Notificaciones del Turno</h4>
+                <div style="font-size:0.85rem; display:flex; flex-direction:column; gap:8px;" id="dropdown-lista-alertas-cuerpo"></div>
+            </div>
+        </div>
+    `;
 }
 
 // --- RENDERIZADORES DE PANTALLAS DE FIGMA ---
@@ -85,36 +109,16 @@ window.procesarLoginCenco = function(e) {
     }
 }
 
-// CONECTADO A SUPABASE: Carga contadores dinámicos y la lista de incidentes real
 async function renderPanelControl() {
-    cuerpoDashboard.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem; background:#fff; padding:12px 20px; border-radius:8px; border:1px solid #e2e8f0; position:relative;">
-            <div style="position:relative; width:400px;">
-                <span style="position:absolute; left:12px; top:11px; color:var(--texto-mutated);">🔍</span>
-                <input type="text" id="buscador-alertas-input" oninput="window.filtrarAlertasTurno()" placeholder="Buscar denuncia, patrulla, folio..." style="width:100%; padding:10px 10px 10px 35px; border:none; background:#f1f5f9; border-radius:6px; font-size:0.9rem;">
-            </div>
-            <div style="display:flex; align-items:center; gap:20px;">
-                <span style="background: #e2f5ec; color: #10b981; font-weight: bold; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; display:flex; align-items:center; gap:6px;">
-                    <span style="width:7px; height:7px; background:#10b981; border-radius:50%;"></span> Sistema En Línea
-                </span>
-                <div style="position:relative; cursor:pointer;" onclick="window.conmutarDropdownNotificaciones(event)">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--texto-oscuro)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-                    <span style="position:absolute; top:-2px; right:-2px; width:8px; height:8px; background:#ff4757; border-radius:50%; border:2px solid #fff;"></span>
-                </div>
-            </div>
+    const cabeceraHTML = generarEstructuraCabeceraGlobal();
 
-            <div id="dropdown-notificaciones-cenco" style="display:none; position:absolute; right:20px; top:65px; width:320px; background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.1); z-index:999; padding:15px; flex-direction:column; gap:10px;">
-                <h4 style="font-weight:700; font-size:0.95rem; border-bottom:1px solid #f1f5f9; padding-bottom:8px; margin-bottom:4px;">Notificaciones del Turno</h4>
-                <div style="font-size:0.85rem; display:flex; flex-direction:column; gap:8px;" id="dropdown-lista-alertas-cuerpo">
-                    <p style="color:var(--texto-mutated)">Cargando novedades...</p>
-                </div>
-            </div>
-        </div>
+    cuerpoDashboard.innerHTML = `
+        ${cabeceraHTML}
 
         <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 1.5rem;">
             <div>
                 <h1 style="font-size: 1.8rem; font-weight: bold; color:var(--texto-oscuro);">Resumen del Turno</h1>
-                <p style="color: var(--texto-mutated); margin-top:4px; font-size:0.95rem;">Monitoreo de emergencias para personas sordas - Sector Central</p>
+                <p style="color: var(--texto-mutated); margin-top:4px; font-size:0.95rem;">Monitoreo de emergencies para personas sordas - Sector Central</p>
             </div>
             <div style="text-align: right;">
                 <p style="font-size:0.85rem; color:var(--texto-mutated); font-weight:500;">10 Mayo 2026</p>
@@ -132,7 +136,6 @@ async function renderPanelControl() {
                     <h3 style="font-size: 1.1rem; font-weight:700;">Actividad Reciente</h3>
                     <a href="#" onclick="event.preventDefault(); navegarA('denuncias')" style="color: var(--verde-carabinero); font-weight:600; font-size:0.9rem; text-decoration:none;">Ver todas</a>
                 </div>
-                
                 <div id="contenedor-actividad-realtime" style="display:flex; flex-direction:column; gap:16px;">
                     <p style="color:var(--texto-mutated); font-size:0.9rem;">Sincronizando flujo de incidentes...</p>
                 </div>
@@ -152,31 +155,17 @@ async function renderPanelControl() {
         </div>
     `;
     
-    // Visor horario
     const actualizarReloj = () => {
         const r = document.getElementById('reloj-cenco');
-        if (r) {
-            r.innerText = new Date().toLocaleTimeString('es-CL', {
-                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-            });
-        }
+        if (r) r.innerText = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
     };
     actualizarReloj();
     clearInterval(window.intervaloReloj);
     window.intervaloReloj = setInterval(actualizarReloj, 1000);
 
-    // CONSULTA ASÍNCRONA A SUPABASE
-    const { data: incidentes, error } = await supabaseClient
-        .from('incidentes_cenco')
-        .select('*')
-        .order('created_at', { ascending: false });
+    const { data: incidentes, error } = await supabaseClient.from('incidentes_cenco').select('*').order('created_at', { ascending: false });
+    if (error || !incidentes) return;
 
-    if (error || !incidentes) {
-        document.getElementById('contenedor-actividad-realtime').innerHTML = `<p style="color:red;">Error de conexión con la red policial.</p>`;
-        return;
-    }
-
-    // Almacenamos la respuesta en la memoria caché global para el buscador interactivo
     cacheIncidentesGlobal = incidentes;
 
     const totalSOS = incidentes.filter(i => i.estado_procedimiento === 'CRÍTICO' || i.categoria_tag === 'SOS').length;
@@ -185,87 +174,60 @@ async function renderPanelControl() {
     document.getElementById('contenedor-contadores-dinamicos').innerHTML = `
         <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
             <div style="display:flex; align-items:center; gap:15px; width:100%;">
-                <div class="icon-box" style="background:#fee2e2; color:#ef4444; display: flex; align-items: center; justify-content: center;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                </div>
-                <div class="card-content">
-                    <p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Alertas SOS Activas</p>
-                    <h3>${totalSOS}</h3>
-                </div>
+                <div class="icon-box" style="background:#fee2e2; color:#ef4444; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+                <div class="card-content"><p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Alertas SOS Activas</p><h3>${totalSOS}</h3></div>
             </div>
             <a href="#" onclick="event.preventDefault(); navegarA('denuncias')" style="font-size:0.8rem; color:var(--verde-carabinero); text-decoration:none; font-weight:600; margin-top:4px;">Ver detalles →</a>
         </div>
-
         <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
             <div style="display:flex; align-items:center; gap:15px; width:100%;">
-                <div class="icon-box" style="background:#ffedd5; color:#f97316; display: flex; align-items: center; justify-content: center;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
-                </div>
-                <div class="card-content">
-                    <p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Videollamadas en Espera</p>
-                    <h3>${totalVideos}</h3>
-                </div>
+                <div class="icon-box" style="background:#ffedd5; color:#f97316; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg></div>
+                <div class="card-content"><p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Videollamadas en Espera</p><h3>${totalVideos}</h3></div>
             </div>
             <a href="#" onclick="event.preventDefault(); navegarA('videos')" style="font-size:0.8rem; color:var(--verde-carabinero); text-decoration:none; font-weight:600; margin-top:4px;">Ver detalles →</a>
         </div>
-
         <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
             <div style="display:flex; align-items:center; gap:15px; width:100%;">
-                <div class="icon-box" style="background:#dcfce7; color:#22c55e; display: flex; align-items: center; justify-content: center;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1 .4-1 1v7c0 .6.4 1 1 1h1"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
-                </div>
-                <div class="card-content">
-                    <p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Patrullas Disponibles</p>
-                    <h3>12</h3>
-                </div>
+                <div class="icon-box" style="background:#dcfce7; color:#22c55e; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1 .4-1 1v7c0 .6.4 1 1 1h1"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg></div>
+                <div class="card-content"><p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Patrullas Disponibles</p><h3>12</h3></div>
             </div>
             <a href="#" onclick="event.preventDefault(); navegarA('patrullas')" style="font-size:0.8rem; color:var(--verde-carabinero); text-decoration:none; font-weight:600; margin-top:4px;">Ver detalles →</a>
         </div>
-
         <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
             <div style="display:flex; align-items:center; gap:15px; width:100%;">
-                <div class="icon-box" style="background:#e0f2fe; color:#0ea5e9; display: flex; align-items: center; justify-content: center;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                </div>
-                <div class="card-content">
-                    <p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Casos Resueltos (Hoy)</p>
-                    <h3>45</h3>
-                </div>
+                <div class="icon-box" style="background:#e0f2fe; color:#0ea5e9; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+                <div class="card-content"><p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Casos Resueltos (Hoy)</p><h3>45</h3></div>
             </div>
             <a href="#" onclick="event.preventDefault();" style="font-size:0.8rem; color:var(--texto-mutado); text-decoration:none; font-weight:500; margin-top:4px; cursor:default;">Corte diario automático</a>
         </div>
     `;
 
-    // Renderizado dinámico de la campana superior
     document.getElementById('dropdown-lista-alertas-cuerpo').innerHTML = cacheIncidentesGlobal.slice(0, 3).map(i => `
-        <div style="padding: 6px; border-bottom: 1px solid #f1f5f9; display:flex; justify-content:space-between;">
+        <div style="padding: 6px; border-bottom: 1px solid #f1f5f9; display:flex; justify-content:space-between; font-size:0.8rem;">
             <span><strong>${i.id}</strong> - ${i.tipo_incidente}</span>
             <span style="color:var(--rojo-critico); font-weight:700;">🚨 Alerta</span>
         </div>
     `).join('');
 
-    // Pintamos la lista elástica principal en pantalla
     window.dibujarListaActividadRecienteHTML(cacheIncidentesGlobal);
 }
 
-// CORREGIDO: Módulo de pintado modular reutilizable para el buscador asíncrono
 window.dibujarListaActividadRecienteHTML = function(arregloIncidentes) {
     const contenedor = document.getElementById('contenedor-actividad-realtime');
     if (!contenedor) return;
 
     if (arregloIncidentes.length === 0) {
-        contenedor.innerHTML = '<p style="color: var(--texto-mutated); font-size:0.9rem; padding: 10px 0;">No se encontraron denuncias que coincidan con la búsqueda.</p>';
+        contenedor.innerHTML = '<p style="color: var(--texto-mutated); font-size:0.9rem; padding: 10px 0;">No se encontraron denuncias que coincidan.</p>';
         return;
     }
 
     let htmlLista = '';
     arregloIncidentes.forEach((inc, index) => {
         let colorCirculo = '#3b82f6'; 
-        let vistaDestino = 'denuncias';
+        let filtroProcedimiento = (inc.categoria_tag === 'SOS') ? 'spinoff' : 'tomo';
 
         if (inc.estado_procedimiento === 'CRÍTICO') { colorCirculo = '#ff4757'; }
         else if (inc.estado_procedimiento === 'PENDIENTE') { colorCirculo = '#f97316'; }
-        if (inc.categoria_tag === 'Videollamada') { vistaDestino = 'videos'; }
 
         const estiloBorde = (index < arregloIncidentes.length - 1) ? 'border-bottom:1px solid #f1f5f9; padding-bottom:12px;' : '';
         const tiempoRelativoStr = calcularTiempoTranscurrido(inc.created_at);
@@ -283,8 +245,8 @@ window.dibujarListaActividadRecienteHTML = function(arregloIncidentes) {
                     </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:12px;">
-                    <span style="color:var(--texto-mutado); font-size:0.8rem; font-weight:500;">Subido ${tiempoRelativoStr}</span>
-                    <button class="btn-submit" style="padding:6px 16px; font-size:0.85rem; width:auto;" onclick="navegarA('${vistaDestino}')">Atender</button>
+                    <span style="color:var(--texto-mutado); font-size:0.8rem; font-weight:500;">🕒 ${tiempoRelativoStr}</span>
+                    <button class="btn-submit" style="padding:6px 16px; font-size:0.85rem; width:auto;" onclick="navegarA('detalle-incidente', '${inc.id}')">Atender</button>
                 </div>
             </div>
         `;
@@ -292,7 +254,6 @@ window.dibujarListaActividadRecienteHTML = function(arregloIncidentes) {
     contenedor.innerHTML = htmlLista;
 }
 
-// CORREGIDO: Buscador interactivo en caliente que filtra la caché global sin parpadeos
 window.filtrarAlertasTurno = function() {
     const textoBuscado = document.getElementById('buscador-alertas-input').value.toLowerCase().trim();
     if (textoBuscado === "") {
@@ -308,7 +269,6 @@ window.filtrarAlertasTurno = function() {
     window.dibujarListaActividadRecienteHTML(filtrados);
 }
 
-// CORREGIDO: Muestra y oculta el cajón modal flotante de notificaciones de Carabineros
 window.conmutarDropdownNotificaciones = function(e) {
     e.stopPropagation();
     const dropdown = document.getElementById('dropdown-notificaciones-cenco');
@@ -316,22 +276,30 @@ window.conmutarDropdownNotificaciones = function(e) {
     dropdown.style.display = (dropdown.style.display === "none" || dropdown.style.display === "") ? "flex" : "none";
 }
 
-// Listener global para cerrar el dropdown si el operador hace clic fuera del recuadro
 document.addEventListener('click', () => {
     const dropdown = document.getElementById('dropdown-notificaciones-cenco');
     if (dropdown) dropdown.style.display = "none";
 });
 
-// PANTALLA 3 FIGMA: Lista completa de Denuncias Recibidas (`image_df0bde.png`)
+// PANTALLA 3 FIGMA: Bitácora General de Denuncias
 async function renderDenunciasRecibidas() {
     wrapperLogin.style.display = "none";
     wrapperPlataforma.style.display = "flex";
+    const cabeceraHTML = generarEstructuraCabeceraGlobal();
     
     cuerpoDashboard.innerHTML = `
-        <h1 style="font-size: 1.8rem; font-weight: bold; margin-bottom: 0.5rem;">Denuncias y Alertas Recibidas</h1>
-        <p style="color: var(--texto-mutado); margin-bottom: 1.5rem;">Gestión de emergencias y reportes ciudadanos en tiempo real.</p>
+        ${cabeceraHTML}
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
+            <div>
+                <h1 style="font-size: 1.8rem; font-weight: bold;">Denuncias y Alertas Recibidas</h1>
+                <p style="color: var(--texto-mutated); margin-top:4px;">Gestión de emergencias y reportes ciudadanos</p>
+            </div>
+            <button class="btn-submit" style="width:auto; padding:10px 20px; background:#fff; color:var(--texto-oscuro); border:1px solid #cbd5e1; display:flex; align-items:center; gap:8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg> Filtrar
+            </button>
+        </div>
         
-        <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden;">
+        <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
             <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
                 <thead>
                     <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: var(--texto-mutated); font-weight: 600;">
@@ -343,20 +311,20 @@ async function renderDenunciasRecibidas() {
                     </tr>
                 </thead>
                 <tbody id="tabla-denuncias-body">
-                    <tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--texto-mutado);">Descargando bitácora de denuncias...</td></tr>
+                    <tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--texto-mutated);">Descargando bitácora de denuncias...</td></tr>
                 </tbody>
             </table>
         </div>
     `;
 
     const { data: incidentes, error } = await supabaseClient.from('incidentes_cenco').select('*').order('created_at', { ascending: false });
-
     const tbody = document.getElementById('tabla-denuncias-body');
     if (error || !incidentes || incidentes.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--rojo-critico);">No se registran procedimientos activos.</td></tr>`;
         return;
     }
 
+    cacheIncidentesGlobal = incidentes;
     let htmlFilas = '';
     incidentes.forEach(inc => {
         let badgeColor = '#f97316'; 
@@ -366,22 +334,22 @@ async function renderDenunciasRecibidas() {
         const horaTexto = new Date(inc.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
         htmlFilas += `
-            <tr style="border-bottom: 1px solid #e2e8f0; vertical-align: top;">
+            <tr style="border-bottom: 1px solid #e2e8f0; vertical-align: top; background:#fff;">
                 <td style="padding: 20px;">
-                    <div style="font-weight: bold; margin-bottom: 6px;">${inc.id}</div>
-                    <span style="background:${badgeColor}22; color:${badgeColor}; font-size:0.75rem; font-weight:bold; padding:3px 8px; border-radius:4px;">${inc.estado_procedimiento}</span>
+                    <div style="font-weight: bold; margin-bottom: 6px; color:var(--texto-oscuro);">${inc.id}</div>
+                    <span style="background:${badgeColor}15; color:${badgeColor}; font-size:0.7rem; font-weight:bold; padding:4px 8px; border-radius:4px; text-transform:uppercase;">● ${inc.estado_procedimiento}</span>
                 </td>
                 <td style="padding: 20px;">
-                    <div style="font-weight: bold; color: var(--texto-oscuro); display: flex; align-items: center; gap: 6px;">
+                    <div style="font-weight: bold; color: var(--texto-oscuro); display: flex; align-items: center; gap: 6px; font-size:1rem;">
                         ${inc.categoria_tag === 'SOS' ? '⚠️' : '👤'} ${inc.tipo_incidente}
                     </div>
-                    <div style="font-size: 0.85rem; color: var(--texto-mutado); margin-top: 4px;">👤 ${inc.nombre_usuario_anonimo || 'Anónimo'}</div>
-                    <div style="font-size: 0.85rem; color: var(--texto-mutado); font-style: italic; margin-top: 8px; max-width: 400px; line-height: 1.4;">"${inc.detalles_reporte}"</div>
+                    <div style="font-size: 0.85rem; color: var(--texto-mutated); margin-top: 5px;">👤 ${inc.nombre_usuario_anonimo || 'Anónimo'}</div>
+                    <div style="font-size: 0.85rem; color: var(--texto-mutated); font-style: italic; margin-top: 10px; max-width: 450px; line-height: 1.4; background:#f8fafc; padding:8px 12px; border-radius:6px; border-left:3px solid #cbd5e1;">"${inc.detalles_reporte}"</div>
                 </td>
-                <td style="padding: 20px; color: var(--texto-mutado); font-size: 0.9rem;">📍 ${inc.ubicacion_texto}</td>
-                <td style="padding: 20px; color: var(--texto-mutado); font-size: 0.9rem;">🕒 ${horaTexto}</td>
+                <td style="padding: 20px; color: var(--texto-oscuro); font-size: 0.9rem; font-weight:500;">📍 ${inc.ubicacion_texto}</td>
+                <td style="padding: 20px; color: var(--texto-mutated); font-size: 0.9rem;">🕒 ${horaTexto}</td>
                 <td style="padding: 20px; text-align: center;">
-                    <button class="btn-submit" style="padding: 8px 16px; font-size: 0.85rem; width: auto; background: #004d35;" onclick="navegarA('patrullas')">Gestionar</button>
+                    <button class="btn-submit" style="padding: 8px 16px; font-size: 0.85rem; width: auto; background: #004d35;" onclick="navegarA('detalle-incidente', '${inc.id}')">Gestionar</button>
                 </td>
             </tr>
         `;
@@ -389,7 +357,138 @@ async function renderDenunciasRecibidas() {
     tbody.innerHTML = htmlFilas;
 }
 
-// PANTALLA 4 FIGMA: Gestión Videollamadas en LSCh (`image_df0b80.png`)
+// NUEVA PANTALLA: Ficha de Control Individual (`image_documento_extendido.png`)
+async function renderDetalleIndividualIncidente(idIncidente) {
+    const cabeceraHTML = generarEstructuraCabeceraGlobal();
+    
+    cuerpoDashboard.innerHTML = `
+        ${cabeceraHTML}
+        <div id="contenedor-modulo-detalle-vivo">
+            <p style="color:var(--texto-mutated);">Rastreando expediente en la red...</p>
+        </div>
+    `;
+
+    const { data: inc, error } = await supabaseClient
+        .from('incidentes_cenco')
+        .select('*')
+        .eq('id', idIncidente)
+        .single();
+
+    if (error || !inc) {
+        document.getElementById('contenedor-modulo-detalle-vivo').innerHTML = `<p style="color:var(--rojo-critico);">Error al cargar la ficha del incidente.</p>`;
+        return;
+    }
+
+    let badgeColor = '#f97316';
+    if (inc.estado_procedimiento === 'CRÍTICO') badgeColor = '#ff4757';
+    if (inc.estado_procedimiento === 'EN ATENCION') badgeColor = '#3b82f6';
+
+    const horaExpediente = new Date(inc.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    document.getElementById('contenedor-modulo-detalle-vivo').innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; width:100%;">
+            <button onclick="navegarA('denuncias')" style="background:none; border:none; color:var(--texto-oscuro); font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; font-size:0.95rem;">← Volver a Denuncias</button>
+            <div style="display:flex; gap:12px;">
+                <button class="btn-submit" style="background:#004d35; width:auto; padding:10px 20px; display:flex; align-items:center; gap:8px;" onclick="navegarA('patrullas')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1 .4-1 1v7c0 .6.4 1 1 1h1"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg> Derivar Patrulla
+                </button>
+                <button class="btn-submit" style="background:#3b82f6; width:auto; padding:10px 20px; display:flex; align-items:center; gap:8px;" onclick="navegarA('videos')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg> Videollamada LSCh
+                </button>
+                <button class="btn-submit" style="background:#10b981; width:auto; padding:10px 20px; display:flex; align-items:center; gap:8px;" onclick="window.cambiarEstadoIncidenteDirecto('${inc.id}', 'RESUELTO')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Marcar como Resuelto
+                </button>
+            </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:20px; max-width:1000px; margin:0 auto;">
+            
+            <div style="background:#fff; padding:25px; border-radius:8px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:flex-start;">
+                <div>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                        <h2 style="font-size:1.8rem; font-weight:800; color:var(--texto-oscuro);">${inc.id}</h2>
+                        <span style="background:${badgeColor}15; color:${badgeColor}; font-size:0.75rem; font-weight:bold; padding:4px 10px; border-radius:4px; text-transform:uppercase;">● ${inc.estado_procedimiento}</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:var(--texto-mutated); font-size:1.05rem;">
+                        <span style="color:#ef4444;">⚠️</span> ${inc.tipo_incidente}
+                    </div>
+                </div>
+                <div style="text-align:right; color:var(--texto-mutated); font-size:0.9rem;">
+                    <div style="display:flex; align-items:center; gap:6px; font-weight:600;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${horaExpediente}</div>
+                    <p style="margin-top:6px; font-weight:500;">Hoy, 10 Mayo 2026</p>
+                </div>
+            </div>
+
+            <div style="background:#fff; padding:25px; border-radius:8px; border:1px solid #e2e8f0;">
+                <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:1.5rem; color:var(--texto-oscuro); display:flex; align-items:center; gap:8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Información del Denunciante
+                </h3>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                    <div>
+                        <p style="font-size:0.85rem; color:var(--texto-mutated); margin-bottom:6px;">Nombre</p>
+                        <p style="font-weight:700; color:var(--texto-oscuro); font-size:1.05rem;">${inc.nombre_usuario_anonimo || 'No especificado'}</p>
+                        <div style="margin-top:15px;"><span style="background:#e2f5ec; color:#10b981; font-size:0.8rem; font-weight:bold; padding:4px 10px; border-radius:4px;">Persona Sorda (Usuaria App LSCh)</span></div>
+                    </div>
+                    <div>
+                        <p style="font-size:0.85rem; color:var(--texto-mutated); margin-bottom:6px;">Teléfono</p>
+                        <p style="font-weight:700; color:var(--texto-oscuro); font-size:1.05rem;">📞 +56 9 8765 4321</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background:#fff; padding:25px; border-radius:8px; border:1px solid #e2e8f0;">
+                <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:1.2rem; color:var(--texto-oscuro); display:flex; align-items:center; gap:8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Ubicación del Incidente
+                </h3>
+                <p style="font-size:0.85rem; color:var(--texto-mutated); margin-bottom:4px;">Dirección</p>
+                <p style="font-weight:700; color:var(--texto-oscuro); margin-bottom:10px;">${inc.ubicacion_texto}</p>
+                <p style="font-size:0.8rem; color:var(--texto-mutated); font-family:monospace; margin-bottom:15px;">Coordenadas GPS: ${inc.latitud || '-33.4242'}, ${inc.longitud || '-70.6113'}</p>
+                <div style="background:#f1f5f9; height:180px; border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--texto-mutated); border:1px dashed #cbd5e1; font-weight:500;">
+                    🗺️ Visor Cartográfico - Cuadrante Activado (${inc.latitud || '-33.42'}, ${inc.longitud || '-70.61'})
+                </div>
+            </div>
+
+            <div style="background:#fff; padding:25px; border-radius:8px; border:1px solid #e2e8f0;">
+                <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:1rem; color:var(--texto-oscuro); display:flex; align-items:center; gap:8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Descripción del Incidente
+                </h3>
+                <div style="background:#f8fafc; padding:15px; border-radius:6px; border-left:4px solid var(--verde-carabinero); font-style:italic; line-height:1.5; color:var(--texto-oscuro);">
+                    "${inc.detalles_reporte || 'Sin descripción en texto adicional.'}"
+                </div>
+            </div>
+
+            <div style="background:#fff; padding:25px; border-radius:8px; border:1px solid #e2e8f0;">
+                <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:1.5rem; color:var(--texto-oscuro);">Historial de Acciones</h3>
+                <div style="display:flex; flex-direction:column; gap:15px; position:relative; padding-left:20px; border-left:2px solid #e2e8f0;">
+                    <div>
+                        <span style="position:absolute; left:-6px; width:10px; height:10px; background:#ff4757; border-radius:50%;"></span>
+                        <p style="font-weight:700; font-size:0.95rem; color:var(--texto-oscuro);">Alerta recibida</p>
+                        <p style="font-size:0.8rem; color:var(--texto-mutated); margin-top:2px;">Hoy a las ${horaExpediente}</p>
+                    </div>
+                    <div>
+                        <span style="position:absolute; left:-6px; width:10px; height:10px; background:#3b82f6; border-radius:50%;"></span>
+                        <p style="font-weight:700; font-size:0.95rem; color:var(--texto-oscuro);">Sistema asignó operador automáticamente</p>
+                        <p style="font-size:0.8rem; color:var(--texto-mutated); margin-top:2px;">Hoy a las ${horaExpediente}</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    `;
+}
+
+// Acción asíncrona rápida para dar cierre al procedimiento del cuadrante
+window.cambiarEstadoIncidenteDirecto = async function(id, nuevoEstado) {
+    const { error } = await supabaseClient
+        .from('incidentes_cenco')
+        .update({ estado_procedimiento: nuevoEstado })
+        .eq('id', id);
+
+    if (error) return alert("No se pudo cerrar el caso.");
+    alert(`🚨 Procedimiento ${id} cerrado de forma conforme.`);
+    navegarA('panel');
+}
+
 function renderGestionVideollamadas() {
     cuerpoDashboard.innerHTML = `
         <h1 style="font-size: 1.8rem; font-weight: bold; margin-bottom: 1.5rem;">Módulo de Asistencia Inclusiva (LSCh)</h1>
@@ -399,18 +498,17 @@ function renderGestionVideollamadas() {
     `;
 }
 
-// PANTALLA 5 FIGMA: Derivación Patrullas en mapa (`image_df0b4b.png`)
 function renderDerivacionPatrullas() {
     cuerpoDashboard.innerHTML = `
         <h1 style="font-size: 1.8rem; font-weight: bold; margin-bottom: 1.5rem;">Despacho y Derivación de Unidades</h1>
         <div style="background: white; height: 60vh; border-radius: 8px; border: 1px solid #e2e8f0; display:flex; align-items:center; justify-content:center;">
-            <p style="color: var(--texto-mutado);">🗺️ Inicializando visor de mapas y cuadrantes...</p>
+            <p style="color: var(--texto-mutated); 🗺️ Inicializando visor de mapas...</p>
         </div>
     `;
 }
 
-// --- SISTEMA DE ENRUTAMIENTO SPA ---
-function navegarA(vista) {
+// --- SISTEMA DE ENRUTAMIENTO SPA EN CASCADA ---
+function navegarA(vista, dataParam = null) {
     document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
     
     switch (vista) {
@@ -430,6 +528,9 @@ function navegarA(vista) {
             document.getElementById('menu-patrullas').classList.add('active');
             renderDerivacionPatrullas();
             break;
+        case 'detalle-incidente':
+            renderDetalleIndividualIncidente(dataParam);
+            break;
         case 'login':
             renderLogin();
             break;
@@ -445,5 +546,4 @@ document.getElementById('menu-videos').onclick = (e) => { e.preventDefault(); na
 document.getElementById('menu-patrullas').onclick = (e) => { e.preventDefault(); navegarA('patrullas'); };
 document.getElementById('btn-logout').onclick = (e) => { e.preventDefault(); sessionActiva = false; navegarA('login'); };
 
-// Arranque inicial de la plataforma
 renderLogin();
