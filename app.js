@@ -49,7 +49,6 @@ window.procesarLoginCenco = function(e) {
     const user = document.getElementById('login-user').value;
     const pass = document.getElementById('login-pass').value;
 
-    // Validación mock simplificada para desarrollo rápido
     if (user === 'operator' && pass === 'cenco2026') {
         sessionActiva = true;
         wrapperLogin.style.display = "none";
@@ -60,7 +59,7 @@ window.procesarLoginCenco = function(e) {
     }
 }
 
-// PANTALLA 2 FIGMA: Panel de Control principal (`image_0dd059.png`)
+// PANTALLA 2 FIGMA: Panel de Control principal (`image_0dd059.png` / Corregida)
 function renderPanelControl() {
     cuerpoDashboard.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
@@ -70,34 +69,34 @@ function renderPanelControl() {
             </div>
             <div style="text-align: right;">
                 <span style="background: #e2f5ec; color: #10b981; font-weight: bold; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;">● Sistema En Línea</span>
-                <h2 style="font-size: 1.6rem; font-weight: 700; margin-top: 8px;" id="reloj-cenco">14:32:05</h2>
+                <h2 style="font-size: 1.6rem; font-weight: 700; margin-top: 8px;" id="reloj-cenco">--:--:--</h2>
             </div>
         </div>
 
         <div class="grid-indicadores">
             <div class="card-indicador">
-                <div class="icon-box" style="background:#fee2e2; color:#ef4444;">⚠ Generar</div>
+                <div class="icon-box" style="background:#fee2e2; color:#ef4444; font-size: 1.4rem; display: flex; align-items: center; justify-content: center;">⚠️</div>
                 <div class="card-content">
                     <p style="color: var(--texto-mutado); font-size:0.85rem;">Alertas SOS Activas</p>
                     <h3>3</h3>
                 </div>
             </div>
             <div class="card-indicador">
-                <div class="icon-box" style="background:#ffedd5; color:#f97316;">📹</div>
+                <div class="icon-box" style="background:#ffedd5; color:#f97316; font-size: 1.4rem; display: flex; align-items: center; justify-content: center;">📹</div>
                 <div class="card-content">
                     <p style="color: var(--texto-mutado); font-size:0.85rem;">Videollamadas en Espera</p>
                     <h3>1</h3>
                 </div>
             </div>
             <div class="card-indicador">
-                <div class="icon-box" style="background:#dcfce7; color:#22c55e;">🚔</div>
+                <div class="icon-box" style="background:#dcfce7; color:#22c55e; font-size: 1.4rem; display: flex; align-items: center; justify-content: center;">🚔</div>
                 <div class="card-content">
                     <p style="color: var(--texto-mutado); font-size:0.85rem;">Patrullas Disponibles</p>
                     <h3>12</h3>
                 </div>
             </div>
             <div class="card-indicador">
-                <div class="icon-box" style="background:#e0f2fe; color:#0ea5e9;">✅</div>
+                <div class="icon-box" style="background:#e0f2fe; color:#0ea5e9; font-size: 1.4rem; display: flex; align-items: center; justify-content: center;">✅</div>
                 <div class="card-content">
                     <p style="color: var(--texto-mutado); font-size:0.85rem;">Casos Resueltos (Hoy)</p>
                     <h3>45</h3>
@@ -108,21 +107,26 @@ function renderPanelControl() {
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-top: 2rem;">
             <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
                 <h3 style="font-size: 1.1rem; margin-bottom: 1rem; font-weight:700;">Actividad Reciente</h3>
-                <p style="color:var(--texto-mutado); font-size:0.9rem;">Cargando despachos en tiempo real...</p>
+                <div id="contenedor-actividad-realtime">
+                    <p style="color:var(--texto-mutado); font-size:0.9rem;">Cargando despachos en tiempo real...</p>
+                </div>
             </div>
             <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; display:flex; flex-direction:column; gap:12px;">
                 <h3 style="font-size: 1.1rem; font-weight:700;">Acciones Rápidas</h3>
-                <button class="btn-submit" style="background:#004d35;">⚡ Despachar Patrulla Cercana</button>
-                <button class="btn-submit" style="background:transparent; border: 1px solid #cbd5e1; color: var(--texto-oscuro);">📹 Iniciar Videollamada (LSCh)</button>
+                <button class="btn-submit" style="background:#004d35;" onclick="navegarA('patrullas')">⚡ Despachar Patrulla Cercana</button>
+                <button class="btn-submit" style="background:transparent; border: 1px solid #cbd5e1; color: var(--texto-oscuro);" onclick="navegarA('videos')">📹 Iniciar Videollamada (LSCh)</button>
             </div>
         </div>
     `;
     
-    // Timer para simular el reloj en vivo del CENCO de tu Figma
-    setInterval(() => {
+    // Sincronización del visor horario del CENCO
+    const actualizarReloj = () => {
         const r = document.getElementById('reloj-cenco');
-        if(r) r.innerText = new Date().toLocaleTimeString('es-CL');
-    }, 1000);
+        if (r) r.innerText = new Date().toLocaleTimeString('es-CL');
+    };
+    actualizarReloj();
+    clearInterval(window.intervaloReloj);
+    window.intervaloReloj = setInterval(actualizarReloj, 1000);
 }
 
 // PANTALLA 3 FIGMA: Denuncias Recibidas (`image_0d7eb8.png`)
@@ -159,7 +163,6 @@ function renderDerivacionPatrullas() {
 
 // --- SISTEMA DE ENRUTAMIENTO SPA ---
 function navegarA(vista) {
-    // Sincronizamos las clases activas en la barra lateral
     document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
     
     switch (vista) {
