@@ -59,7 +59,7 @@ window.procesarLoginCenco = function(e) {
     }
 }
 
-// CONECTADO A SUPABASE: Carga contadores dinámicos y la lista de incidentes real
+// CONECTADO A SUPABASE: Carga contadores dinámicos y la lista de incidentes decorada como Figma
 async function renderPanelControl() {
     cuerpoDashboard.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
@@ -69,7 +69,7 @@ async function renderPanelControl() {
             </div>
             <div style="text-align: right;">
                 <span style="background: #e2f5ec; color: #10b981; font-weight: bold; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;">● Sistema En Línea</span>
-                <h2 style="font-size: 1.6rem; font-weight: 700; margin-top: 8px;" id="reloj-cenco">--:--:--</h2>
+                <h2 style="font-size: 1.6rem; font-weight: 700; margin-top: 8px; color: var(--texto-oscuro);" id="reloj-cenco">--:--:--</h2>
             </div>
         </div>
 
@@ -89,24 +89,31 @@ async function renderPanelControl() {
                 </div>
             </div>
             
-            <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; display:flex; flex-direction:column; gap:12px;">
-                <h3 style="font-size: 1.1rem; font-weight:700;">Acciones Rápidas</h3>
+            <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; display:flex; flex-direction:column; gap:12px; height: fit-content;">
+                <h3 style="font-size: 1.1rem; font-weight:700; margin-bottom: 4px;">Acciones Rápidas</h3>
                 <button class="btn-submit" style="background:#004d35; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="navegarA('patrullas')">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1 .4-1 1v7c0 .6.4 1 1 1h1"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
                     Despachar Patrulla Cercana
                 </button>
                 <button class="btn-submit" style="background:transparent; border: 1px solid #cbd5e1; color: var(--texto-oscuro); display:flex; align-items:center; justify-content:center; gap:8px;" onclick="navegarA('videos')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><mpath d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
                     Iniciar Videollamada (LSCh)
                 </button>
             </div>
         </div>
     `;
     
-    // Visor horario en vivo del CENCO
+    // CORREGIDO: Reloj sincronizado con el formato de hora de Chile de tu Figma (12 horas + a.m./p.m.)
     const actualizarReloj = () => {
         const r = document.getElementById('reloj-cenco');
-        if (r) r.innerText = new Date().toLocaleTimeString('es-CL');
+        if (r) {
+            r.innerText = new Date().toLocaleTimeString('es-CL', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+        }
     };
     actualizarReloj();
     clearInterval(window.intervaloReloj);
@@ -123,53 +130,69 @@ async function renderPanelControl() {
         return;
     }
 
-    // 1. CÁLCULO DE CONTADORES EN TIEMPO REAL DESDE LAS FILAS DE LA TABLA
+    // CÁLCULO DE CONTADORES EN TIEMPO REAL DESDE LAS FILAS DE LA TABLA
     const totalSOS = incidentes.filter(i => i.estado_procedimiento === 'CRÍTICO' || i.categoria_tag === 'SOS').length;
     const totalVideos = incidentes.filter(i => i.categoria_tag === 'Videollamada' && i.estado_procedimiento !== 'RESUELTO').length;
 
+    // CORREGIDO: Se agregaron los enlaces "Ver detalles →" calzados con la decoración de Figma
     document.getElementById('contenedor-contadores-dinamicos').innerHTML = `
-        <div class="card-indicador">
-            <div class="icon-box" style="background:#fee2e2; color:#ef4444; display: flex; align-items: center; justify-content: center;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
+            <div style="display:flex; align-items:center; gap:15px; width:100%;">
+                <div class="icon-box" style="background:#fee2e2; color:#ef4444; display: flex; align-items: center; justify-content: center;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div class="card-content">
+                    <p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Alertas SOS Activas</p>
+                    <h3>${totalSOS}</h3>
+                </div>
             </div>
-            <div class="card-content">
-                <p style="color: var(--texto-mutated); font-size:0.85rem;">Alertas SOS Activas</p>
-                <h3>${totalSOS}</h3>
-            </div>
+            <a href="#" onclick="event.preventDefault(); navegarA('denuncias')" style="font-size:0.8rem; color:var(--verde-carabinero); text-decoration:none; font-weight:600; margin-top:4px;">Ver detalles →</a>
         </div>
-        <div class="card-indicador">
-            <div class="icon-box" style="background:#ffedd5; color:#f97316; display: flex; align-items: center; justify-content: center;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+
+        <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
+            <div style="display:flex; align-items:center; gap:15px; width:100%;">
+                <div class="icon-box" style="background:#ffedd5; color:#f97316; display: flex; align-items: center; justify-content: center;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+                </div>
+                <div class="card-content">
+                    <p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Videollamadas en Espera</p>
+                    <h3>${totalVideos}</h3>
+                </div>
             </div>
-            <div class="card-content">
-                <p style="color: var(--texto-mutated); font-size:0.85rem;">Videollamadas en Espera</p>
-                <h3>${totalVideos}</h3>
-            </div>
+            <a href="#" onclick="event.preventDefault(); navegarA('videos')" style="font-size:0.8rem; color:var(--verde-carabinero); text-decoration:none; font-weight:600; margin-top:4px;">Ver detalles →</a>
         </div>
-        <div class="card-indicador">
-            <div class="icon-box" style="background:#dcfce7; color:#22c55e; display: flex; align-items: center; justify-content: center;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1 .4-1 1v7c0 .6.4 1 1 1h1"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+
+        <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
+            <div style="display:flex; align-items:center; gap:15px; width:100%;">
+                <div class="icon-box" style="background:#dcfce7; color:#22c55e; display: flex; align-items: center; justify-content: center;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1 .4-1 1v7c0 .6.4 1 1 1h1"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+                </div>
+                <div class="card-content">
+                    <p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Patrullas Disponibles</p>
+                    <h3>12</h3>
+                </div>
             </div>
-            <div class="card-content">
-                <p style="color: var(--texto-mutated); font-size:0.85rem;">Patrullas Disponibles</p>
-                <h3>12</h3>
-            </div>
+            <a href="#" onclick="event.preventDefault(); navegarA('patrullas')" style="font-size:0.8rem; color:var(--verde-carabinero); text-decoration:none; font-weight:600; margin-top:4px;">Ver detalles →</a>
         </div>
-        <div class="card-indicador">
-            <div class="icon-box" style="background:#e0f2fe; color:#0ea5e9; display: flex; align-items: center; justify-content: center;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+
+        <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
+            <div style="display:flex; align-items:center; gap:15px; width:100%;">
+                <div class="icon-box" style="background:#e0f2fe; color:#0ea5e9; display: flex; align-items: center; justify-content: center;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <div class="card-content">
+                    <p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Casos Resueltos (Hoy)</p>
+                    <h3>45</h3>
+                </div>
             </div>
-            <div class="card-content">
-                <p style="color: var(--texto-mutated); font-size:0.85rem;">Casos Resueltos (Hoy)</p>
-                <h3>45</h3>
-            </div>
+            <a href="#" onclick="event.preventDefault();" style="font-size:0.8rem; color:var(--texto-mutado); text-decoration:none; font-weight:500; margin-top:4px; cursor:default;">Corte diario automático</a>
         </div>
     `;
 
-    // 2. RENDERIZADO DINÁMICO DE FILAS DE ACTIVIDAD RECIENTE DESDE SUPABASE
+    // RENDERIZADORES DINÁMICOS DE ACTIVIDAD RECIENTE
     let htmlLista = '';
     incidentes.forEach((inc, index) => {
-        let colorCirculo = '#3b82f6'; // Azul por defecto
+        let colorCirculo = '#3b82f6'; 
         let vistaDestino = 'denuncias';
 
         if (inc.estado_procedimiento === 'CRÍTICO') { colorCirculo = '#ff4757'; }
@@ -177,7 +200,6 @@ async function renderPanelControl() {
         
         if (inc.categoria_tag === 'Videollamada') { vistaDestino = 'videos'; }
 
-        // Agregamos borde inferior separador a todos menos al último item
         const estiloBorde = (index < incidentes.length - 1) ? 'border-bottom:1px solid #f1f5f9; padding-bottom:12px;' : '';
 
         htmlLista += `
@@ -185,24 +207,29 @@ async function renderPanelControl() {
                 <div style="display:flex; align-items:center; gap:12px;">
                     <span style="width:10px; height:10px; background:${colorCirculo}; border-radius:50%;"></span>
                     <div>
-                        <span style="font-weight:700; font-size:0.95rem;">${inc.id}</span>
-                        <span style="background:#f1f5f9; color:var(--texto-mutated); font-size:0.75rem; padding:2px 6px; border-radius:4px; font-weight:bold; margin-left:6px;">${inc.categoria_tag}</span>
-                        <p style="color:var(--texto-mutated); font-size:0.85rem; margin-top:4px;">${inc.ubicacion_texto}</p>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-weight:700; font-size:0.95rem;">${inc.id}</span>
+                            <span style="background:#f1f5f9; color:var(--texto-mutado); font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold; text-transform:uppercase;">${inc.categoria_tag}</span>
+                        </div>
+                        <p style="color:var(--texto-mutated); font-size:0.85rem; margin-top:6px;">${inc.ubicacion_texto}</p>
                     </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:12px;">
-                    <span style="color:var(--texto-mutated); font-size:0.8rem;">🕒 En Línea</span>
+                    <span style="color:var(--texto-mutado); font-size:0.8rem; font-weight:500;">👁️ En Línea</span>
                     <button class="btn-submit" style="padding:6px 16px; font-size:0.85rem; width:auto;" onclick="navegarA('${vistaDestino}')">Atender</button>
                 </div>
             </div>
         `;
     });
 
-    document.getElementById('contenedor-actividad-realtime').innerHTML = htmlLista;
+    document.getElementById('contenedor-actividad-realtime').innerHTML = htmlLista || '<p style="color: var(--texto-mutado);">No se registran eventos recientes.</p>';
 }
 
-// PANTALLA 3 FIGMA: Lista completa de Denuncias Recibidas (`image_df0bde.png` / Conectada)
+// PANTALLA 3 FIGMA: Lista completa de Denuncias Recibidas (`image_df0bde.png`)
 async function renderDenunciasRecibidas() {
+    wrapperLogin.style.display = "none";
+    wrapperPlataforma.style.display = "flex";
+    
     cuerpoDashboard.innerHTML = `
         <h1 style="font-size: 1.8rem; font-weight: bold; margin-bottom: 0.5rem;">Denuncias y Alertas Recibidas</h1>
         <p style="color: var(--texto-mutado); margin-bottom: 1.5rem;">Gestión de emergencias y reportes ciudadanos en tiempo real.</p>
@@ -235,7 +262,7 @@ async function renderDenunciasRecibidas() {
 
     let htmlFilas = '';
     incidentes.forEach(inc => {
-        let badgeColor = '#f97316'; // PENDIENTE (Naranja)
+        let badgeColor = '#f97316'; 
         if (inc.estado_procedimiento === 'CRÍTICO') badgeColor = '#ff4757';
         if (inc.estado_procedimiento === 'EN ATENCION') badgeColor = '#3b82f6';
 
