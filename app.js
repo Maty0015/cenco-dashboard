@@ -12,14 +12,12 @@ let sessionActiva = false;
 let cacheIncidentesGlobal = []; 
 
 // --- REGLAS AUXILIARES DE CÁLCULO ---
-// CORREGIDO: Ajuste hermético para calcular minutos relativos reales simulando el desfase de tu turno en Figma
 function calcularTiempoTranscurrido(fechaBaseDatos) {
     const ahora = new Date();
     const fechaIncidente = new Date(fechaBaseDatos);
     const diferenciaMilisegundos = ahora - fechaIncidente;
     let minutos = Math.floor(diferenciaMilisegundos / 1000 / 60);
 
-    // Ajuste matemático: si por registros estáticos de la base de datos el tiempo es viejo, lo calzamos al rango horario de hoy
     if (minutos > 1440) {
         minutos = (minutos % 30) + 2; 
     }
@@ -205,7 +203,6 @@ async function renderPanelControl() {
         </div>
     `;
 
-    // CORREGIDO: Se inyecta la bitácora con los minutos relativos dinámicos en el dropdown flotante de notificaciones
     document.getElementById('dropdown-lista-alertas-cuerpo').innerHTML = cacheIncidentesGlobal.slice(0, 3).map(i => `
         <div style="padding: 8px; border-bottom: 1px solid #f1f5f9; display:flex; flex-direction:column; gap:4px; font-size:0.8rem;">
             <div style="display:flex; justify-content:space-between; font-weight:700;">
@@ -261,7 +258,6 @@ window.dibujarListaActividadRecienteHTML = function(arregloIncidentes) {
     contenedor.innerHTML = htmlLista;
 }
 
-// CORREGIDO: Buscador dinámico por texto que interactúa en caliente sin recargas
 window.filtrarAlertasTurno = function() {
     const textoBuscado = document.getElementById('buscador-alertas-input').value.toLowerCase().trim();
     if (textoBuscado === "") {
@@ -289,7 +285,7 @@ document.addEventListener('click', () => {
     if (dropdown) dropdown.style.display = "none";
 });
 
-// PANTALLA 3 FIGMA: Bitácora General de Denuncias
+// PANTALLA 3 FIGMA: Bitácora General de Denuncias (CORREGIDA: Sin saltos de línea)
 async function renderDenunciasRecibidas() {
     wrapperLogin.style.display = "none";
     wrapperPlataforma.style.display = "flex";
@@ -341,6 +337,7 @@ async function renderDenunciasRecibidas() {
 
         const horaTexto = new Date(inc.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
 
+        // CORREGIDO: Se inyecta white-space: nowrap y anchos estables de bloque para evitar desbordes verticales
         htmlFilas += `
             <tr style="border-bottom: 1px solid #e2e8f0; vertical-align: top; background:#fff;">
                 <td style="padding: 20px; white-space: nowrap;">
@@ -367,7 +364,7 @@ async function renderDenunciasRecibidas() {
     tbody.innerHTML = htmlFilas;
 }
 
-// NUEVA PANTALLA: Ficha de Control Individual (`image_de1ac8.png`)
+// PANTALLA: Ficha de Control Individual (`image_de1ac8.png`)
 async function renderDetalleIndividualIncidente(idIncidente) {
     const cabeceraHTML = generarEstructuraCabeceraGlobal();
     
@@ -498,11 +495,83 @@ window.cambiarEstadoIncidenteDirecto = async function(id, nuevoEstado) {
     navegarA('panel');
 }
 
+// PANTALLA 4 FIGMA: Entorno Inclusivo de Streaming LSCh (CORREGIDO: Diseño elástico en doble columna)
 function renderGestionVideollamadas() {
+    const cabeceraHTML = generarEstructuraCabeceraGlobal();
+
     cuerpoDashboard.innerHTML = `
-        <h1 style="font-size: 1.8rem; font-weight: bold; margin-bottom: 1.5rem;">Módulo de Asistencia Inclusiva (LSCh)</h1>
-        <div style="background: #1e293b; height: 60vh; border-radius: 8px; display:flex; align-items:center; justify-content:center; color:white;">
-            <p style="opacity: 0.6;">📳 Esperando llamada entrante desde la APK móvil...</p>
+        ${cabeceraHTML}
+        
+        <h1 style="font-size: 1.8rem; font-weight: bold; margin-bottom: 0.5rem; color: var(--texto-oscuro);">Módulo de Asistencia Inclusiva (LSCh)</h1>
+        <p style="color: var(--texto-mutated); margin-bottom: 1.5rem; font-size: 0.95rem;">Turno activo de atención mediante Lengua de Señas Chilena en tiempo real.</p>
+        
+        <div style="display: grid; grid-template-columns: 2.2fr 1fr; gap: 20px; align-items: start; width:100%;">
+            
+            <div style="background: #1a1f36; border-radius: 12px; overflow: hidden; position: relative; height: 65vh; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+                
+                <div style="background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); border-radius: 8px; padding: 10px 16px; color: white; width: fit-content; border: 1px solid rgba(255,255,255,0.1);">
+                    <h4 style="font-size: 1rem; font-weight: 700;">María González</h4>
+                    <p style="font-size: 0.75rem; color: #10b981; display: flex; align-items: center; gap: 5px; margin-top: 2px;">
+                        <span style="width: 6px; height: 6px; background: #10b981; border-radius: 50%;"></span> Conexión estable
+                    </p>
+                </div>
+
+                <div style="text-align: center; color: rgba(255,255,255,0.7); flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.5;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <p style="font-size: 1rem; font-weight: 500;">Conectando video del usuario...</p>
+                </div>
+
+                <div style="position: absolute; right: 20px; bottom: 90px; width: 140px; height: 190px; background: #2e375a; border-radius: 8px; border: 2px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.5); font-size: 0.8rem; font-weight: 500; box-shadow: 0 10px 20px rgba(0,0,0,0.2);">
+                    Tu cámara
+                </div>
+
+                <div style="display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%; background: rgba(15, 23, 42, 0.4); padding: 12px; border-radius: 12px; backdrop-filter: blur(4px);">
+                    <button style="width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.15); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                        <svg width="20" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                    </button>
+                    <button style="width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.15); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                        <svg width="20" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+                    </button>
+                    <button onclick="navegarA('panel')" style="width: 44px; height: 44px; border-radius: 50%; background: #ff4757; border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(255,71,87,0.4);">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform: rotate(135deg);"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.79 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 15px; height: 65vh; overflow-y: auto; padding-right: 2px;">
+                
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 18px;">
+                    <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: var(--texto-oscuro);">Asistencia Inclusiva</h3>
+                    <p style="font-size: 0.85rem; color: var(--texto-mutated); line-height: 1.4; margin-bottom: 12px;">Usted está operando como intérprete oficial de Lengua de Señas Chilena (LSCh).</p>
+                    <div style="background: #f0fdf4; border-radius: 6px; padding: 10px 12px; border-left: 3px solid #10b981; font-size: 0.85rem; color: #15803d; line-height: 1.4;">
+                        <strong>Protocolo:</strong> Mantenga el rostro visible y las manos en el encuadre de la toma.
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 18px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+                        <h3 style="font-size: 1rem; font-weight: 700; color: var(--texto-oscuro); display: flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Cola de Espera
+                        </h3>
+                        <span style="background: #ffedd5; color: #f97316; font-size: 0.75rem; font-weight: bold; padding: 2px 6px; border-radius: 10px;">1</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                        <span style="font-size: 0.9rem; font-weight: 600; color: var(--texto-oscuro);">Juan Pérez</span>
+                        <span style="font-size: 0.85rem; font-weight: 700; color: #ff4757; font-family: monospace;">2:30</span>
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 18px; display: flex; flex-direction: column; gap: 10px; flex-grow: 1;">
+                    <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--texto-oscuro); display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 2px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Chat de Texto / Notas
+                    </h3>
+                    <div style="flex-grow: 1; background: #f8fafc; border-radius: 6px; padding: 10px; min-height: 80px; color: var(--texto-mutated); font-size: 0.85rem; font-style: italic;">
+                        Los mensajes del transcriptor o notas ingresadas aparecerán aquí reflejados...
+                    </div>
+                    <input type="text" placeholder="Escribir mensaje..." style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.9rem; background:#f1f5f9;">
+                </div>
+
+            </div>
         </div>
     `;
 }
