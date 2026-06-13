@@ -10,6 +10,21 @@ const wrapperLogin = document.getElementById('wrapper-login');
 // --- VARIABLES DE ESTADO ---
 let sessionActiva = false;
 
+// --- REGLAS AUXILIARES DE CÁLCULO ---
+// Función para calcular dinámicamente el tiempo transcurrido exacto de tu Figma
+function calcularTiempoTranscurrido(fechaBaseDatos) {
+    const ahora = new Date();
+    const fechaIncidente = new Date(fechaBaseDatos);
+    const diferenciaMilisegundos = ahora - fechaIncidente;
+    const minutos = Math.floor(diferenciaMilisegundos / 1000 / 60);
+
+    if (minutos < 1) return "Hace un instante";
+    if (minutos < 60) return `Hace ${minutos} min`;
+    
+    const horas = Math.floor(minutos / 60);
+    return `Hace ${horas} h`;
+}
+
 // --- RENDERIZADORES DE PANTALLAS DE FIGMA ---
 
 function renderLogin() {
@@ -53,28 +68,51 @@ window.procesarLoginCenco = function(e) {
         sessionActiva = true;
         wrapperLogin.style.display = "none";
         wrapperPlataforma.style.display = "flex";
+        
+        // CORREGIDO: Inyectamos los iconos de Figma en la barra lateral una sola vez al entrar
+        document.getElementById('menu-panel').innerHTML = `<svg width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg> Panel de Control`;
+        document.getElementById('menu-denuncias').innerHTML = `<div style="display:flex; align-items:center;"><svg width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Denuncias Recibidas</div> <span class="badge">3</span>`;
+        document.getElementById('menu-videos').innerHTML = `<div style="display:flex; align-items:center;"><svg width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg> Gestión Videollamadas</div> <span class="badge">1</span>`;
+        document.getElementById('menu-patrullas').innerHTML = `<svg width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1 .4-1 1v7c0 .6.4 1 1 1h1"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg> Derivación Patrullas`;
+
         navegarA('panel');
     } else {
         alert("Credenciales institucionales incorrectas.");
     }
 }
 
-// CONECTADO A SUPABASE: Carga contadores dinámicos y la lista de incidentes decorada como Figma
+// CONECTADO A SUPABASE: Carga contadores dinámicos y la lista de incidentes real
 async function renderPanelControl() {
     cuerpoDashboard.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem; background:#fff; padding:12px 20px; border-radius:8px; border:1px solid #e2e8f0;">
+            <div style="position:relative; width:400px;">
+                <span style="position:absolute; left:12px; top:11px; color:var(--texto-mutated);">🔍</span>
+                <input type="text" placeholder="Buscar denuncia, patrulla, folio..." style="width:100%; padding:10px 10px 10px 35px; border:none; background:#f1f5f9; border-radius:6px; font-size:0.9rem;">
+            </div>
+            <div style="display:flex; align-items:center; gap:20px;">
+                <span style="background: #e2f5ec; color: #10b981; font-weight: bold; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; display:flex; align-items:center; gap:6px;">
+                    <span style="width:7px; height:7px; background:#10b981; border-radius:50%;"></span> Sistema En Línea
+                </span>
+                <div style="position:relative; cursor:pointer;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--texto-oscuro)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                    <span style="position:absolute; top:-2px; right:-2px; width:8px; height:8px; background:#ff4757; border-radius:50%; border:2px solid #fff;"></span>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 1.5rem;">
             <div>
-                <h1 style="font-size: 1.8rem; font-weight: bold;">Resumen del Turno</h1>
-                <p style="color: var(--texto-mutado); margin-top:4px;">Monitoreo de emergencias para personas sordas - Sector Central</p>
+                <h1 style="font-size: 1.8rem; font-weight: bold; color:var(--texto-oscuro);">Resumen del Turno</h1>
+                <p style="color: var(--texto-mutated); margin-top:4px; font-size:0.95rem;">Monitoreo de emergencies para personas sordas - Sector Central</p>
             </div>
             <div style="text-align: right;">
-                <span style="background: #e2f5ec; color: #10b981; font-weight: bold; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;">● Sistema En Línea</span>
-                <h2 style="font-size: 1.6rem; font-weight: 700; margin-top: 8px; color: var(--texto-oscuro);" id="reloj-cenco">--:--:--</h2>
+                <p style="font-size:0.85rem; color:var(--texto-mutated); font-weight:500;">10 Mayo 2026</p>
+                <h2 style="font-size: 1.8rem; font-weight: 700; margin-top: 4px; color: var(--texto-oscuro);" id="reloj-cenco">--:--:--</h2>
             </div>
         </div>
 
         <div class="grid-indicadores" id="contenedor-contadores-dinamicos">
-            <p style="color: var(--texto-mutado);">Calculando indicadores del turno...</p>
+            <p style="color: var(--texto-mutated);">Calculando indicadores del turno...</p>
         </div>
 
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-top: 2rem;">
@@ -85,7 +123,7 @@ async function renderPanelControl() {
                 </div>
                 
                 <div id="contenedor-actividad-realtime" style="display:flex; flex-direction:column; gap:16px;">
-                    <p style="color:var(--texto-mutado); font-size:0.9rem;">Sincronizando flujo de incidentes...</p>
+                    <p style="color:var(--texto-mutated); font-size:0.9rem;">Sincronizando flujo de incidentes...</p>
                 </div>
             </div>
             
@@ -103,15 +141,12 @@ async function renderPanelControl() {
         </div>
     `;
     
-    // CORREGIDO: Reloj sincronizado con el formato de hora de Chile de tu Figma (12 horas + a.m./p.m.)
+    // Visor horario
     const actualizarReloj = () => {
         const r = document.getElementById('reloj-cenco');
         if (r) {
             r.innerText = new Date().toLocaleTimeString('es-CL', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: true
+                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
             });
         }
     };
@@ -130,11 +165,9 @@ async function renderPanelControl() {
         return;
     }
 
-    // CÁLCULO DE CONTADORES EN TIEMPO REAL DESDE LAS FILAS DE LA TABLA
     const totalSOS = incidentes.filter(i => i.estado_procedimiento === 'CRÍTICO' || i.categoria_tag === 'SOS').length;
     const totalVideos = incidentes.filter(i => i.categoria_tag === 'Videollamada' && i.estado_procedimiento !== 'RESUELTO').length;
 
-    // CORREGIDO: Se agregaron los enlaces "Ver detalles →" calzados con la decoración de Figma
     document.getElementById('contenedor-contadores-dinamicos').innerHTML = `
         <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
             <div style="display:flex; align-items:center; gap:15px; width:100%;">
@@ -189,7 +222,7 @@ async function renderPanelControl() {
         </div>
     `;
 
-    // RENDERIZADORES DINÁMICOS DE ACTIVIDAD RECIENTE
+    // 2. RENDERIZADO DINÁMICO DE FILAS DE ACTIVIDAD RECIENTE
     let htmlLista = '';
     incidentes.forEach((inc, index) => {
         let colorCirculo = '#3b82f6'; 
@@ -201,6 +234,9 @@ async function renderPanelControl() {
         if (inc.categoria_tag === 'Videollamada') { vistaDestino = 'videos'; }
 
         const estiloBorde = (index < incidentes.length - 1) ? 'border-bottom:1px solid #f1f5f9; padding-bottom:12px;' : '';
+        
+        // CORREGIDO: Lógica de tiempo relativo dinámico basado en la columna created_at de Supabase
+        const tiempoRelativoStr = calcularTiempoTranscurrido(inc.created_at);
 
         htmlLista += `
             <div style="display:flex; justify-content:space-between; align-items:center; ${estiloBorde}">
@@ -209,13 +245,13 @@ async function renderPanelControl() {
                     <div>
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span style="font-weight:700; font-size:0.95rem;">${inc.id}</span>
-                            <span style="background:#f1f5f9; color:var(--texto-mutado); font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold; text-transform:uppercase;">${inc.categoria_tag}</span>
+                            <span style="background:#f1f5f9; color:var(--texto-mutated); font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold; text-transform:uppercase;">${inc.categoria_tag}</span>
                         </div>
                         <p style="color:var(--texto-mutated); font-size:0.85rem; margin-top:6px;">${inc.ubicacion_texto}</p>
                     </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:12px;">
-                    <span style="color:var(--texto-mutado); font-size:0.8rem; font-weight:500;">👁️ En Línea</span>
+                    <span style="color:var(--texto-mutado); font-size:0.8rem; font-weight:500;">🕒 ${tiempoRelativoStr}</span>
                     <button class="btn-submit" style="padding:6px 16px; font-size:0.85rem; width:auto;" onclick="navegarA('${vistaDestino}')">Atender</button>
                 </div>
             </div>
