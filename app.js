@@ -59,8 +59,8 @@ window.procesarLoginCenco = function(e) {
     }
 }
 
-// PANTALLA 2 FIGMA: Panel de Control principal (`image_0dd059.png` / Corregida con SVGs de Figma)
-function renderPanelControl() {
+// CONECTADO A SUPABASE: Carga contadores dinámicos y la lista de incidentes real
+async function renderPanelControl() {
     cuerpoDashboard.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
             <div>
@@ -73,43 +73,8 @@ function renderPanelControl() {
             </div>
         </div>
 
-        <div class="grid-indicadores">
-            <div class="card-indicador">
-                <div class="icon-box" style="background:#fee2e2; color:#ef4444; display: flex; align-items: center; justify-content: center;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                </div>
-                <div class="card-content">
-                    <p style="color: var(--texto-mutado); font-size:0.85rem;">Alertas SOS Activas</p>
-                    <h3>3</h3>
-                </div>
-            </div>
-            <div class="card-indicador">
-                <div class="icon-box" style="background:#ffedd5; color:#f97316; display: flex; align-items: center; justify-content: center;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
-                </div>
-                <div class="card-content">
-                    <p style="color: var(--texto-mutado); font-size:0.85rem;">Videollamadas en Espera</p>
-                    <h3>1</h3>
-                </div>
-            </div>
-            <div class="card-indicador">
-                <div class="icon-box" style="background:#dcfce7; color:#22c55e; display: flex; align-items: center; justify-content: center;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1 .4-1 1v7c0 .6.4 1 1 1h1"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
-                </div>
-                <div class="card-content">
-                    <p style="color: var(--texto-mutado); font-size:0.85rem;">Patrullas Disponibles</p>
-                    <h3>12</h3>
-                </div>
-            </div>
-            <div class="card-indicador">
-                <div class="icon-box" style="background:#e0f2fe; color:#0ea5e9; display: flex; align-items: center; justify-content: center;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                </div>
-                <div class="card-content">
-                    <p style="color: var(--texto-mutado); font-size:0.85rem;">Casos Resueltos (Hoy)</p>
-                    <h3>45</h3>
-                </div>
-            </div>
+        <div class="grid-indicadores" id="contenedor-contadores-dinamicos">
+            <p style="color: var(--texto-mutado);">Calculando indicadores del turno...</p>
         </div>
 
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-top: 2rem;">
@@ -120,50 +85,7 @@ function renderPanelControl() {
                 </div>
                 
                 <div id="contenedor-actividad-realtime" style="display:flex; flex-direction:column; gap:16px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <span style="width:10px; height:10px; background:#ff4757; border-radius:50%;"></span>
-                            <div>
-                                <span style="font-weight:700; font-size:0.95rem;">SOS-892</span>
-                                <span style="background:#f1f5f9; color:var(--texto-mutado); font-size:0.75rem; padding:2px 6px; border-radius:4px; font-weight:bold; margin-left:6px;">SOS</span>
-                                <p style="color:var(--texto-mutado); font-size:0.85rem; margin-top:4px;">Av. Providencia 1034</p>
-                            </div>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <span style="color:var(--texto-mutado); font-size:0.8rem;">🕒 Hace 2 min</span>
-                            <button class="btn-submit" style="padding:6px 16px; font-size:0.85rem; width:auto;" onclick="navegarA('denuncias')">Atender</button>
-                        </div>
-                    </div>
-
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <span style="width:10px; height:10px; background:#f97316; border-radius:50%;"></span>
-                            <div>
-                                <span style="font-weight:700; font-size:0.95rem;">DEN-445</span>
-                                <span style="background:#f1f5f9; color:var(--texto-mutado); font-size:0.75rem; padding:2px 6px; border-radius:4px; font-weight:bold; margin-left:6px;">Denuncia - Robo</span>
-                                <p style="color:var(--texto-mutado); font-size:0.85rem; margin-top:4px;">Plaza Italia</p>
-                            </div>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <span style="color:var(--texto-mutado); font-size:0.8rem;">🕒 Hace 15 min</span>
-                            <button class="btn-submit" style="padding:6px 16px; font-size:0.85rem; width:auto;" onclick="navegarA('denuncias')">Atender</button>
-                        </div>
-                    </div>
-
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <span style="width:10px; height:10px; background:#3b82f6; border-radius:50%;"></span>
-                            <div>
-                                <span style="font-weight:700; font-size:0.95rem;">VID-102</span>
-                                <span style="background:#f1f5f9; color:var(--texto-mutado); font-size:0.75rem; padding:2px 6px; border-radius:4px; font-weight:bold; margin-left:6px;">Videollamada</span>
-                                <p style="color:var(--texto-mutado); font-size:0.85rem; margin-top:4px;">No especificada</p>
-                            </div>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <span style="color:var(--texto-mutado); font-size:0.8rem;">🕒 Hace 18 min</span>
-                            <button class="btn-submit" style="padding:6px 16px; font-size:0.85rem; width:auto;" onclick="navegarA('videos')">Atender</button>
-                        </div>
-                    </div>
+                    <p style="color:var(--texto-mutado); font-size:0.9rem;">Sincronizando flujo de incidentes...</p>
                 </div>
             </div>
             
@@ -174,14 +96,14 @@ function renderPanelControl() {
                     Despachar Patrulla Cercana
                 </button>
                 <button class="btn-submit" style="background:transparent; border: 1px solid #cbd5e1; color: var(--texto-oscuro); display:flex; align-items:center; justify-content:center; gap:8px;" onclick="navegarA('videos')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><mpath d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
                     Iniciar Videollamada (LSCh)
                 </button>
             </div>
         </div>
     `;
     
-    // Sincronización del visor horario del CENCO
+    // Visor horario en vivo del CENCO
     const actualizarReloj = () => {
         const r = document.getElementById('reloj-cenco');
         if (r) r.innerText = new Date().toLocaleTimeString('es-CL');
@@ -189,21 +111,161 @@ function renderPanelControl() {
     actualizarReloj();
     clearInterval(window.intervaloReloj);
     window.intervaloReloj = setInterval(actualizarReloj, 1000);
+
+    // CONSULTA ASÍNCRONA A SUPABASE
+    const { data: incidentes, error } = await supabaseClient
+        .from('incidentes_cenco')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error || !incidentes) {
+        document.getElementById('contenedor-actividad-realtime').innerHTML = `<p style="color:red;">Error de conexión con la red policial.</p>`;
+        return;
+    }
+
+    // 1. CÁLCULO DE CONTADORES EN TIEMPO REAL DESDE LAS FILAS DE LA TABLA
+    const totalSOS = incidentes.filter(i => i.estado_procedimiento === 'CRÍTICO' || i.categoria_tag === 'SOS').length;
+    const totalVideos = incidentes.filter(i => i.categoria_tag === 'Videollamada' && i.estado_procedimiento !== 'RESUELTO').length;
+
+    document.getElementById('contenedor-contadores-dinamicos').innerHTML = `
+        <div class="card-indicador">
+            <div class="icon-box" style="background:#fee2e2; color:#ef4444; display: flex; align-items: center; justify-content: center;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div class="card-content">
+                <p style="color: var(--texto-mutated); font-size:0.85rem;">Alertas SOS Activas</p>
+                <h3>${totalSOS}</h3>
+            </div>
+        </div>
+        <div class="card-indicador">
+            <div class="icon-box" style="background:#ffedd5; color:#f97316; display: flex; align-items: center; justify-content: center;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+            </div>
+            <div class="card-content">
+                <p style="color: var(--texto-mutated); font-size:0.85rem;">Videollamadas en Espera</p>
+                <h3>${totalVideos}</h3>
+            </div>
+        </div>
+        <div class="card-indicador">
+            <div class="icon-box" style="background:#dcfce7; color:#22c55e; display: flex; align-items: center; justify-content: center;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1 .4-1 1v7c0 .6.4 1 1 1h1"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+            </div>
+            <div class="card-content">
+                <p style="color: var(--texto-mutated); font-size:0.85rem;">Patrullas Disponibles</p>
+                <h3>12</h3>
+            </div>
+        </div>
+        <div class="card-indicador">
+            <div class="icon-box" style="background:#e0f2fe; color:#0ea5e9; display: flex; align-items: center; justify-content: center;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="card-content">
+                <p style="color: var(--texto-mutated); font-size:0.85rem;">Casos Resueltos (Hoy)</p>
+                <h3>45</h3>
+            </div>
+        </div>
+    `;
+
+    // 2. RENDERIZADO DINÁMICO DE FILAS DE ACTIVIDAD RECIENTE DESDE SUPABASE
+    let htmlLista = '';
+    incidentes.forEach((inc, index) => {
+        let colorCirculo = '#3b82f6'; // Azul por defecto
+        let vistaDestino = 'denuncias';
+
+        if (inc.estado_procedimiento === 'CRÍTICO') { colorCirculo = '#ff4757'; }
+        else if (inc.estado_procedimiento === 'PENDIENTE') { colorCirculo = '#f97316'; }
+        
+        if (inc.categoria_tag === 'Videollamada') { vistaDestino = 'videos'; }
+
+        // Agregamos borde inferior separador a todos menos al último item
+        const estiloBorde = (index < incidentes.length - 1) ? 'border-bottom:1px solid #f1f5f9; padding-bottom:12px;' : '';
+
+        htmlLista += `
+            <div style="display:flex; justify-content:space-between; align-items:center; ${estiloBorde}">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="width:10px; height:10px; background:${colorCirculo}; border-radius:50%;"></span>
+                    <div>
+                        <span style="font-weight:700; font-size:0.95rem;">${inc.id}</span>
+                        <span style="background:#f1f5f9; color:var(--texto-mutated); font-size:0.75rem; padding:2px 6px; border-radius:4px; font-weight:bold; margin-left:6px;">${inc.categoria_tag}</span>
+                        <p style="color:var(--texto-mutated); font-size:0.85rem; margin-top:4px;">${inc.ubicacion_texto}</p>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="color:var(--texto-mutated); font-size:0.8rem;">🕒 En Línea</span>
+                    <button class="btn-submit" style="padding:6px 16px; font-size:0.85rem; width:auto;" onclick="navegarA('${vistaDestino}')">Atender</button>
+                </div>
+            </div>
+        `;
+    });
+
+    document.getElementById('contenedor-actividad-realtime').innerHTML = htmlLista;
 }
 
-// PANTALLA 3 FIGMA: Denuncias Recibidas (`image_0d7eb8.png`)
-function renderDenunciasRecibidas() {
+// PANTALLA 3 FIGMA: Lista completa de Denuncias Recibidas (`image_df0bde.png` / Conectada)
+async function renderDenunciasRecibidas() {
     cuerpoDashboard.innerHTML = `
         <h1 style="font-size: 1.8rem; font-weight: bold; margin-bottom: 0.5rem;">Denuncias y Alertas Recibidas</h1>
         <p style="color: var(--texto-mutado); margin-bottom: 1.5rem;">Gestión de emergencias y reportes ciudadanos en tiempo real.</p>
         
-        <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
-            <p style="color: var(--texto-mutado);">Conectando con Supabase Realtime Stream...</p>
+        <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+                <thead>
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: var(--texto-mutated); font-weight: 600;">
+                        <th style="padding: 15px 20px;">ID / Estado</th>
+                        <th style="padding: 15px 20px;">Tipo / Usuario</th>
+                        <th style="padding: 15px 20px;">Ubicación</th>
+                        <th style="padding: 15px 20px;">Hora</th>
+                        <th style="padding: 15px 20px; text-align: center;">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-denuncias-body">
+                    <tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--texto-mutado);">Descargando bitácora de denuncias...</td></tr>
+                </tbody>
+            </table>
         </div>
     `;
+
+    const { data: incidentes, error } = await supabaseClient.from('incidentes_cenco').select('*').order('created_at', { ascending: false });
+
+    const tbody = document.getElementById('tabla-denuncias-body');
+    if (error || !incidentes || incidentes.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--rojo-critico);">No se registran procedimientos activos.</td></tr>`;
+        return;
+    }
+
+    let htmlFilas = '';
+    incidentes.forEach(inc => {
+        let badgeColor = '#f97316'; // PENDIENTE (Naranja)
+        if (inc.estado_procedimiento === 'CRÍTICO') badgeColor = '#ff4757';
+        if (inc.estado_procedimiento === 'EN ATENCION') badgeColor = '#3b82f6';
+
+        const horaTexto = new Date(inc.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+        htmlFilas += `
+            <tr style="border-bottom: 1px solid #e2e8f0; vertical-align: top;">
+                <td style="padding: 20px;">
+                    <div style="font-weight: bold; margin-bottom: 6px;">${inc.id}</div>
+                    <span style="background:${badgeColor}22; color:${badgeColor}; font-size:0.75rem; font-weight:bold; padding:3px 8px; border-radius:4px;">${inc.estado_procedimiento}</span>
+                </td>
+                <td style="padding: 20px;">
+                    <div style="font-weight: bold; color: var(--texto-oscuro); display: flex; align-items: center; gap: 6px;">
+                        ${inc.categoria_tag === 'SOS' ? '⚠️' : '👤'} ${inc.tipo_incidente}
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--texto-mutado); margin-top: 4px;">👤 ${inc.nombre_usuario_anonimo || 'Anónimo'}</div>
+                    <div style="font-size: 0.85rem; color: var(--texto-mutado); font-style: italic; margin-top: 8px; max-width: 400px; line-height: 1.4;">"${inc.detalles_reporte}"</div>
+                </td>
+                <td style="padding: 20px; color: var(--texto-mutado); font-size: 0.9rem;">📍 ${inc.ubicacion_texto}</td>
+                <td style="padding: 20px; color: var(--texto-mutado); font-size: 0.9rem;">🕒 ${horaTexto}</td>
+                <td style="padding: 20px; text-align: center;">
+                    <button class="btn-submit" style="padding: 8px 16px; font-size: 0.85rem; width: auto; background: #004d35;" onclick="navegarA('patrullas')">Gestionar</button>
+                </td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = htmlFilas;
 }
 
-// PANTALLA 4 FIGMA: Gestión Videollamadas en LSCh (`image_0d7e82.png`)
+// PANTALLA 4 FIGMA: Gestión Videollamadas en LSCh (`image_df0b80.png`)
 function renderGestionVideollamadas() {
     cuerpoDashboard.innerHTML = `
         <h1 style="font-size: 1.8rem; font-weight: bold; margin-bottom: 1.5rem;">Módulo de Asistencia Inclusiva (LSCh)</h1>
@@ -213,7 +275,7 @@ function renderGestionVideollamadas() {
     `;
 }
 
-// PANTALLA 5 FIGMA: Derivación Patrullas en mapa (`image_0d7e5b.png`)
+// PANTALLA 5 FIGMA: Derivación Patrullas en mapa (`image_df0b4b.png`)
 function renderDerivacionPatrullas() {
     cuerpoDashboard.innerHTML = `
         <h1 style="font-size: 1.8rem; font-weight: bold; margin-bottom: 1.5rem;">Despacho y Derivación de Unidades</h1>
