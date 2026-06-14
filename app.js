@@ -10,6 +10,7 @@ const wrapperLogin = document.getElementById('wrapper-login');
 let sessionActiva = false;
 let cacheIncidentesGlobal = []; 
 let patrullaSeleccionadaParaDespacho = ""; // Almacena temporalmente la unidad activa
+let instanciaMapaLeaflet = null; // Instancia global para evitar duplicados en el DOM
 
 // --- REGLAS AUXILIARES DE CÁLCULO ---
 function calcularTiempoTranscurrido(fechaBaseDatos) {
@@ -62,8 +63,51 @@ const iniciarRelojGlobal = () => {
     window.intervaloReloj = setInterval(actualizarCajasReloj, 1000);
 };
 
-// --- LOGICA CONSUMIDORA DE DATOS DE REPORTE ---
+// --- RENDERIZACIÓN DE MAPAS INTERACTIVOS ---
+window.inicializarMapaOperativoConcepcion = function() {
+    // Si el mapa ya existía en memoria de un cambio de pestaña previo, lo limpiamos para evitar duplicar IDs
+    if (instanciaMapaLeaflet !== null) {
+        instanciaMapaLeaflet.remove();
+        instanciaMapaLeaflet = null;
+    }
 
+    // Coordenadas geográficas de la Plaza de la Independencia (Centro de Concepción, Chile)
+    const latConce = -36.8261;
+    const lonConce = -73.0498;
+
+    // Inicializamos el lienzo acoplándolo al DIV contenedor del index.html
+    instanciaMapaLeaflet = L.map('mapa-interactivo-leaflet').setView([latConce, lonConce], 14);
+
+    // Cargamos los servidores de imágenes vectoriales de calles de OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(instanciaMapaLeaflet);
+
+    // Marcador Táctico 1: Radiopatrulla Z-8942 en la Plaza de la Independencia
+    const marcadorPatrulla = L.marker([-36.8262, -73.0503]).addTo(instanciaMapaLeaflet);
+    marcadorPatrulla.bindPopup(`
+        <div style="font-family:sans-serif; font-size:0.85rem; line-height:1.4;">
+            <strong style="color:#004d35;">🚔 Unidad Z-8942</strong><br>
+            <b>Cuadrante:</b> Centro 1<br>
+            <b>Estado:</b> Disponible<br>
+            <small style="color:var(--texto-mutated);">Tripulación: Cabo Reyes / Carab. Soto</small>
+        </div>
+    `);
+
+    // Marcador Táctico 2: Alerta SOS Activa cerca de la Universidad de Concepción (Barrio Universitario)
+    const marcadorSOS = L.marker([-36.8290, -73.0398]).addTo(instanciaMapaLeaflet);
+    marcadorSOS.bindPopup(`
+        <div style="font-family:sans-serif; font-size:0.85rem; line-height:1.4;">
+            <strong style="color:#ff4757;">⚠️ ALERTA CRÍTICA: SOS-892</strong><br>
+            <b>Usuario:</b> María González (Persona Sorda)<br>
+            <b>Ubicación:</b> Sector Universidad de Concepción<br>
+            <span style="color:#f97316; font-weight:bold;">Estado: Requiere Despacho Urgente</span>
+        </div>
+    `).openPopup();
+};
+
+// --- LOGICA CONSUMIDORA DE DATOS DE REPORTE ---
 async function cargarIncidentesDesdeSupabase() {
     const { data: incidentes, error } = await supabaseClient.from('incidentes_cenco').select('*').order('created_at', { ascending: false });
     if (!error && incidentes) {
@@ -268,7 +312,6 @@ window.cambiarEstadoIncidenteDirecto = async function(id, nuevoEstado) {
     navegarA('panel');
 }
 
-// CORREGIDO: Abre el modal emergente y renderiza dinámicamente las denuncias activas de Supabase
 window.abrirModalDespacho = async function(idPatrulla) {
     patrullaSeleccionadaParaDespacho = idPatrulla;
     document.getElementById('modal-titulo-patrulla').innerText = `Despachar Patrulla ${idPatrulla}`;
@@ -279,8 +322,6 @@ window.abrirModalDespacho = async function(idPatrulla) {
     cuerpoModal.innerHTML = `<p style="color: var(--texto-mutated); font-size:0.9rem;">Consultando reportes de emergencia...</p>`;
 
     await cargarIncidentesDesdeSupabase();
-    
-    // Filtramos solo los incidentes que no han sido cerrados todavía
     const pendientes = cacheIncidentesGlobal.filter(i => i.estado_procedimiento !== 'RESUELTO');
 
     if (pendientes.length === 0) {
@@ -319,7 +360,6 @@ window.cerrarModalDespacho = function() {
     patrullaSeleccionadaParaDespacho = "";
 };
 
-// Vincula de forma lógica la patrulla con el incidente e informa al cuadrante
 window.asignarPatrullaADenuncia = async function(idDenuncia) {
     const { error } = await supabaseClient
         .from('incidentes_cenco')
@@ -328,7 +368,7 @@ window.asignarPatrullaADenuncia = async function(idDenuncia) {
 
     if (error) return alert("Error al despachar la patrulla.");
     
-    alert(`🚔 ¡Despacho Exitoso! Unidad ${patrullaSeleccionadaParaDespacho} asignada al procedimiento ${idDenuncia}.`);
+    alert(`Publicado conforme: Unidad ${patrullaSeleccionadaParaDespacho} asignada al procedimiento ${idDenuncia}.`);
     window.cerrarModalDespacho();
     navegarA('panel');
 };
@@ -387,6 +427,11 @@ function navegarA(vista, dataParam = null) {
             document.getElementById('menu-patrullas').classList.add('active');
             document.getElementById('vista-derivacion-patrullas').style.display = "block";
             iniciarRelojGlobal();
+            
+            // CORREGIDO: Ejecutamos el renderizado del mapa dinámico real una vez que el contenedor DIV ya es visible en la interfaz
+            setTimeout(() => {
+                window.inicializarMapaOperativoConcepcion();
+            }, 50);
             break;
         case 'detalle-incidente':
             document.getElementById('vista-detalle-incidente').style.display = "block";
