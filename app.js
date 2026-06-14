@@ -9,6 +9,7 @@ const wrapperLogin = document.getElementById('wrapper-login');
 // --- VARIABLES DE ESTADO ---
 let sessionActiva = false;
 let cacheIncidentesGlobal = []; 
+let patrullaSeleccionadaParaDespacho = ""; // Almacena temporalmente la unidad activa
 
 // --- REGLAS AUXILIARES DE CÁLCULO ---
 function calcularTiempoTranscurrido(fechaBaseDatos) {
@@ -39,7 +40,6 @@ window.procesarLoginCenco = function(e) {
         wrapperLogin.style.display = "none";
         wrapperPlataforma.style.display = "flex";
         
-        // Sincronizamos las cabeceras SVG de la barra lateral desde JS una sola vez
         document.getElementById('menu-panel').innerHTML = `<svg width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg> Panel de Control`;
         document.getElementById('menu-denuncias').innerHTML = `<div style="display:flex; align-items:center;"><svg width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Denuncias Recibidas</div> <span class="badge">3</span>`;
         document.getElementById('menu-videos').innerHTML = `<div style="display:flex; align-items:center;"><svg width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg> Gestión Videollamadas</div> <span class="badge">1</span>`;
@@ -51,7 +51,6 @@ window.procesarLoginCenco = function(e) {
     }
 }
 
-// Visor de reloj unificado para las clases dinámicas de Carabineros
 const iniciarRelojGlobal = () => {
     clearInterval(window.intervaloReloj);
     const actualizarCajasReloj = () => {
@@ -230,7 +229,7 @@ async function renderDetalleIndividualIncidente(idIncidente) {
                     <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:var(--texto-mutated); font-size:1.05rem;">⚠️ ${inc.tipo_incidente}</div>
                 </div>
                 <div style="text-align:right; color:var(--texto-mutated); font-size:0.9rem;">
-                    <div style="display:flex; align-items:center; gap:6px; font-weight:600;">🕒 ${inc.id}</div>
+                    <div style="display:flex; align-items:center; gap:6px; font-weight:600;">🕒 ${horaExpediente}</div>
                     <p style="margin-top:6px; font-weight:500;">Hoy, 10 Mayo 2026</p>
                 </div>
             </div>
@@ -269,6 +268,71 @@ window.cambiarEstadoIncidenteDirecto = async function(id, nuevoEstado) {
     navegarA('panel');
 }
 
+// CORREGIDO: Abre el modal emergente y renderiza dinámicamente las denuncias activas de Supabase
+window.abrirModalDespacho = async function(idPatrulla) {
+    patrullaSeleccionadaParaDespacho = idPatrulla;
+    document.getElementById('modal-titulo-patrulla').innerText = `Despachar Patrulla ${idPatrulla}`;
+    
+    const modal = document.getElementById('modal-despacho-patrulla');
+    const cuerpoModal = document.getElementById('modal-lista-denuncias-cuerpo');
+    modal.style.display = "flex";
+    cuerpoModal.innerHTML = `<p style="color: var(--texto-mutated); font-size:0.9rem;">Consultando reportes de emergencia...</p>`;
+
+    await cargarIncidentesDesdeSupabase();
+    
+    // Filtramos solo los incidentes que no han sido cerrados todavía
+    const pendientes = cacheIncidentesGlobal.filter(i => i.estado_procedimiento !== 'RESUELTO');
+
+    if (pendientes.length === 0) {
+        cuerpoModal.innerHTML = `<p style="color: var(--texto-mutated); text-align:center; padding:15px; font-size:0.95rem;">No se registran denuncias pendientes en el cuadrante.</p>`;
+        return;
+    }
+
+    cuerpoModal.innerHTML = pendientes.map(i => {
+        let tagColor = i.estado_procedimiento === 'CRÍTICO' ? '#ff4757' : '#f97316';
+        const horaStr = new Date(i.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+        return `
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-weight: 800; font-size: 1.05rem; color: var(--texto-oscuro);">${i.id}</span>
+                        <span style="background: ${tagColor}15; color: ${tagColor}; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">● ${i.estado_procedimiento}</span>
+                    </div>
+                    <span style="font-size: 0.85rem; color: var(--texto-mutated); font-family: monospace;">🕒 ${horaStr}</span>
+                </div>
+                <div style="font-size: 0.9rem; color: var(--texto-oscuro); line-height: 1.4;">
+                    <p style="font-weight: 700; margin-bottom: 4px;">⚠️ ${i.tipo_incidente}</p>
+                    <p style="color: var(--texto-mutated);">📍 ${i.ubicacion_texto}</p>
+                    <p style="margin-top: 6px; font-size:0.85rem;"><strong>Denunciante:</strong> ${i.nombre_usuario_anonimo || 'Anónimo'}</p>
+                </div>
+                <button onclick="window.asignarPatrullaADenuncia('${i.id}')" class="btn-submit" style="background: #004d35; font-size: 0.9rem; padding: 10px; width: 100%; font-weight: 700; margin-top: 5px;">
+                    Asignar a esta denuncia
+                </button>
+            </div>
+        `;
+    }).join('');
+};
+
+window.cerrarModalDespacho = function() {
+    document.getElementById('modal-despacho-patrulla').style.display = "none";
+    patrullaSeleccionadaParaDespacho = "";
+};
+
+// Vincula de forma lógica la patrulla con el incidente e informa al cuadrante
+window.asignarPatrullaADenuncia = async function(idDenuncia) {
+    const { error } = await supabaseClient
+        .from('incidentes_cenco')
+        .update({ estado_procedimiento: 'EN ATENCION', detalles_reporte: `Unidad policial ${patrullaSeleccionadaParaDespacho} despachada al cuadrante.` })
+        .eq('id', idDenuncia);
+
+    if (error) return alert("Error al despachar la patrulla.");
+    
+    alert(`🚔 ¡Despacho Exitoso! Unidad ${patrullaSeleccionadaParaDespacho} asignada al procedimiento ${idDenuncia}.`);
+    window.cerrarModalDespacho();
+    navegarA('panel');
+};
+
 window.filtrarAlertasTurno = function() {
     const textoBuscado = document.getElementById('buscador-alertas-input').value.toLowerCase().trim();
     if (textoBuscado === "") {
@@ -277,7 +341,7 @@ window.filtrarAlertasTurno = function() {
     }
     const filtrados = cacheIncidentesGlobal.filter(i => 
         i.id.toLowerCase().includes(textoBuscado) || i.tipo_incidente.toLowerCase().includes(textoBuscado) || 
-        i.ubicacion_texto.toLowerCase().includes(textoBuscated) || i.categoria_tag.toLowerCase().includes(textoBuscado)
+        i.ubicacion_texto.toLowerCase().includes(textoBuscado) || i.categoria_tag.toLowerCase().includes(textoBuscado)
     );
     window.dibujarListaActividadRecienteHTML(filtrados);
 }
@@ -298,7 +362,6 @@ document.addEventListener('click', () => {
 function navegarA(vista, dataParam = null) {
     document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
     
-    // Ocultamos todas las secciones estáticas declaradas en el HTML antes de conmutar
     document.getElementById('vista-panel-control').style.display = "none";
     document.getElementById('vista-denuncias-recibidas').style.display = "none";
     document.getElementById('vista-gestion-videollamadas').style.display = "none";
@@ -323,6 +386,7 @@ function navegarA(vista, dataParam = null) {
         case 'patrullas':
             document.getElementById('menu-patrullas').classList.add('active');
             document.getElementById('vista-derivacion-patrullas').style.display = "block";
+            iniciarRelojGlobal();
             break;
         case 'detalle-incidente':
             document.getElementById('vista-detalle-incidente').style.display = "block";
@@ -335,12 +399,10 @@ function navegarA(vista, dataParam = null) {
     }
 }
 
-// --- LISTENERS NATIVOS ---
 document.getElementById('menu-panel').onclick = (e) => { e.preventDefault(); navegarA('panel'); };
 document.getElementById('menu-denuncias').onclick = (e) => { e.preventDefault(); navegarA('denuncias'); };
 document.getElementById('menu-videos').onclick = (e) => { e.preventDefault(); navegarA('videos'); };
 document.getElementById('menu-patrullas').onclick = (e) => { e.preventDefault(); navegarA('patrullas'); };
 document.getElementById('btn-logout').onclick = (e) => { e.preventDefault(); sessionActiva = false; navegarA('login'); };
 
-// Arranque inicial limpio
 navegarA('login');
