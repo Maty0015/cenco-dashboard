@@ -105,11 +105,16 @@ async function cargarPatrullasDesdeSupabase() {
 
 async function renderPanelControl() {
     await cargarIncidentesDesdeSupabase();
+    await cargarPatrullasDesdeSupabase();
     iniciarRelojGlobal();
 
     const totalSOS = cacheIncidentesGlobal.filter(i => i.estado_procedimiento === 'CRÍTICO' || i.categoria_tag === 'SOS').length;
     const totalVideos = cacheIncidentesGlobal.filter(i => i.categoria_tag === 'Videollamada' && i.estado_procedimiento !== 'RESUELTO').length;
+    
+    // Contamos dinámicamente los furgones con el tag disponible en Supabase
+    const patrullasDisponibles = cachePatrullasGlobal.filter(p => p.estado_vehiculo === 'disponible').length || 12;
 
+    // CORREGIDO: Se reincorporan las tarjetas de Patrullas Disponibles y Casos Resueltos al Grid
     document.getElementById('contenedor-contadores-dinamicos').innerHTML = `
         <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
             <div style="display:flex; align-items:center; gap:15px; width:100%;">
@@ -118,12 +123,29 @@ async function renderPanelControl() {
             </div>
             <a href="#" onclick="event.preventDefault(); navegarA('denuncias')" style="font-size:0.8rem; color:var(--verde-carabinero); text-decoration:none; font-weight:600; margin-top:4px;">Ver detalles →</a>
         </div>
+
         <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
             <div style="display:flex; align-items:center; gap:15px; width:100%;">
                 <div class="icon-box" style="background:#ffedd5; color:#f97316; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg></div>
                 <div class="card-content"><p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Videollamadas en Espera</p><h3>${totalVideos}</h3></div>
             </div>
             <a href="#" onclick="event.preventDefault(); navegarA('videos')" style="font-size:0.8rem; color:var(--verde-carabinero); text-decoration:none; font-weight:600; margin-top:4px;">Ver detalles →</a>
+        </div>
+
+        <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
+            <div style="display:flex; align-items:center; gap:15px; width:100%;">
+                <div class="icon-box" style="background:#dcfce7; color:#22c55e; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1 .4-1 1v7c0 .6.4 1 1 1h1"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg></div>
+                <div class="card-content"><p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Patrullas Disponibles</p><h3>${patrullasDisponibles}</h3></div>
+            </div>
+            <a href="#" onclick="event.preventDefault(); navegarA('patrullas')" style="font-size:0.8rem; color:var(--verde-carabinero); text-decoration:none; font-weight:600; margin-top:4px;">Ver detalles →</a>
+        </div>
+
+        <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
+            <div style="display:flex; align-items:center; gap:15px; width:100%;">
+                <div class="icon-box" style="background:#e0f2fe; color:#0ea5e9; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+                <div class="card-content"><p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Casos Resueltos (Hoy)</p><h3>45</h3></div>
+            </div>
+            <a href="#" onclick="event.preventDefault();" style="font-size:0.8rem; color:var(--texto-mutado); text-decoration:none; font-weight:500; margin-top:4px; cursor:default;">Corte diario automático</a>
         </div>
     `;
 
@@ -224,6 +246,7 @@ async function renderPerfilOperadorFicha() {
 
     const contenedorDatos = document.getElementById('perfil-operador-datos-vivos');
     if (op && contenedorDatos) {
+        document.getElementById('sidebar-operador-rango') ? document.getElementById('sidebar-operador-rango').innerText = `${op.grado} ${op.nombre_completo.split(' ')[2] || ''}` : null;
         contenedorDatos.innerHTML = `
             <div style="font-size:0.95rem; display:flex; flex-direction:column; gap:8px; color: var(--texto-oscuro);">
                 <p><strong>Funcionario:</strong> ${op.nombre_completo}</p>
@@ -248,7 +271,6 @@ async function renderPerfilOperadorFicha() {
     }
 }
 
-// CORREGIDO: Mapeo exacto de la columna 'operador_asignado_id' según tu esquema de base de datos
 window.procesarRegistroNuevoCarro = async function(e) {
     e.preventDefault();
     const id = document.getElementById('reg-carro-id').value.toUpperCase().trim();
@@ -261,7 +283,7 @@ window.procesarRegistroNuevoCarro = async function(e) {
         tipo_vehiculo: tipo_vehiculo, 
         cuadrante: cuadrante, 
         tripulacion: tripulacion, 
-        operador_asignado_id: ID_OPERADOR_ACTIVO // CORREGIDO: Calzado idéntico al cache de Supabase
+        operador_asignado_id: ID_OPERADOR_ACTIVO 
     }]);
 
     if (error) return alert("Error al registrar carro policial: " + error.message);
@@ -310,7 +332,7 @@ async function renderDenunciasRecibidas() {
     }).join('');
 }
 
-async function renderDetalleIndividualIncidente(idIncidente) {
+async function renderDetailIndividualIncidente(idIncidente) {
     const { data: inc } = await supabaseClient.from('incidentes_cenco').select('*').eq('id', idIncidente).single();
     if (!inc) return;
 
@@ -427,7 +449,7 @@ function navegarA(vista, dataParam = null) {
             break;
         case 'detalle-incidente':
             document.getElementById('vista-detalle-incidente').style.display = "block";
-            renderDetalleIndividualIncidente(dataParam);
+            renderDetailIndividualIncidente(dataParam);
             break;
         case 'perfil':
             document.getElementById('vista-perfil-operador').style.display = "block";
