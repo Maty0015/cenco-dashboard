@@ -13,7 +13,7 @@ let cachePatrullasGlobal = [];
 let patrullaSeleccionadaParaDespacho = ""; // Almacena temporalmente la unidad activa
 let instanciaMapaLeaflet = null; // Instancia global para evitar duplicados en el DOM
 
-// ID Fijo institucional del Sargento Pérez asignado en tu base de datos Supabase
+// ID Fijo de base de datos asignado para el Sargento Juan Carlos Pérez
 const ID_OPERADOR_ACTIVO = 'e4444444-4444-4444-4444-444444444444';
 
 // --- REGLAS AUXILIARES DE CÁLCULO ---
@@ -180,7 +180,6 @@ window.dibujarListaActividadRecienteHTML = function(arregloIncidentes) {
     contenedor.innerHTML = htmlLista;
 }
 
-// CORREGIDO: Renderiza dinámicamente las patrullas reales consumidas desde la base de datos de Supabase
 async function renderPatrullasEnSector() {
     await cargarPatrullasDesdeSupabase();
     const contenedor = document.getElementById('contenedor-patrullas-dinamicas-lista');
@@ -219,7 +218,6 @@ async function renderPatrullasEnSector() {
     }).join('');
 }
 
-// CORREGIDO: Inyecta dinámicamente el perfil del Sargento y su bitácora real de llamadas asociadas
 async function renderPerfilOperadorFicha() {
     const { data: op } = await supabaseClient.from('perfiles_operadores').select('*').eq('id', ID_OPERADOR_ACTIVO).single();
     await cargarIncidentesDesdeSupabase();
@@ -239,7 +237,7 @@ async function renderPerfilOperadorFicha() {
     const contenedorHistorial = document.getElementById('perfil-operador-historial-casos-lista');
     if (contenedorHistorial) {
         contenedorHistorial.innerHTML = cacheIncidentesGlobal.map(i => `
-            <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:15px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:15px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                 <div>
                     <strong style="color:var(--texto-oscuro); font-size:1rem;">${i.id}</strong> - <span style="font-size:0.9rem;">${i.tipo_incidente}</span>
                     <p style="font-size:0.8rem; color:var(--texto-mutated); margin-top:4px;">📍 ${i.ubicacion_texto}</p>
@@ -250,7 +248,7 @@ async function renderPerfilOperadorFicha() {
     }
 }
 
-// CORREGIDO: Procesa e inserta de forma real un carro policial manual sin simulación
+// CORREGIDO: Mapeo exacto de la columna 'operador_asignado_id' según tu esquema de base de datos
 window.procesarRegistroNuevoCarro = async function(e) {
     e.preventDefault();
     const id = document.getElementById('reg-carro-id').value.toUpperCase().trim();
@@ -259,17 +257,16 @@ window.procesarRegistroNuevoCarro = async function(e) {
     const tripulacion = document.getElementById('reg-carro-tripulacion').value.trim();
 
     const { error } = await supabaseClient.from('patrullas_cenco').insert([{
-        id, 
-        tipo_vehiculo, 
-        cuadrante, 
-        tripulacion, 
-        operador_assigned_id: ID_OPERADOR_ACTIVO, // En tu script SQL se creó con operador_asignado_id, lo mapeamos estricto:
-        operador_asignado_id: ID_OPERADOR_ACTIVO 
+        id: id, 
+        tipo_vehiculo: tipo_vehiculo, 
+        cuadrante: cuadrante, 
+        tripulacion: tripulacion, 
+        operador_asignado_id: ID_OPERADOR_ACTIVO // CORREGIDO: Calzado idéntico al cache de Supabase
     }]);
 
     if (error) return alert("Error al registrar carro policial: " + error.message);
     
-    alert(`🚔 Carro Policial ${id} matriculado con éxito en Supabase.`);
+    alert(` 🚨 Carro Policial ${id} matriculado con éxito en Supabase.`);
     document.getElementById('reg-carro-id').value = "";
     document.getElementById('reg-carro-tipo').value = "";
     document.getElementById('reg-carro-cuadrante').value = "";
