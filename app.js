@@ -1,6 +1,6 @@
 // --- CONFIGURACIÓN E INICIALIZACIÓN DE SUPABASE ---
 const SUPABASE_URL = "https://rcoigjmvmcnfzszssmly.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_qNhIIRqHXtHUa1AysCXgIA_AVf3Bcpe";
+const SUPABASE_ANON_KEY = "sb_publishable_xsL00kSs04gdqOnplNUInA_gGOy-MEP";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const wrapperPlataforma = document.getElementById('wrapper-plataforma');
@@ -84,6 +84,43 @@ window.inicializarMapaOperativoConcepcion = function() {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap'
     }).addTo(instanciaMapaLeaflet);
+
+    // 1. Pintar patrullas fijas en el cuadrante para referencia
+    L.marker([-36.8262, -73.0503]).addTo(instanciaMapaLeaflet)
+        .bindPopup('<b>🚔 Z-8942</b><br>Plaza Independencia<br><b>Estado:</b> Disponible');
+    L.marker([-36.8310, -73.0420]).addTo(instanciaMapaLeaflet)
+        .bindPopup('<b>🚔 Z-8922</b><br>Cuadrante 3<br><b>Estado:</b> En procedimiento');
+
+    // 2. Pintar alertas SOS activas de Supabase de forma dinámica
+    const alertasActivas = cacheIncidentesGlobal.filter(inc => inc.estado !== 'RESUELTO');
+
+    // Icono rojo personalizado para alertas críticas
+    const sosIcono = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    });
+
+    alertasActivas.forEach(inc => {
+        if (inc.latitud && inc.longitud) {
+            const popupContenido = `
+                <div style="font-family: sans-serif; font-size: 0.9rem; line-height: 1.4; width: 180px;">
+                    <strong style="color: #ff4757; font-size: 0.95rem; display: block; margin-bottom: 4px;">🚨 ALERTA SOS CRÍTICA</strong>
+                    <b>Ciudadano:</b> ${inc.nombre_ciudadano}<br>
+                    <b>RUT:</b> ${inc.rut_ciudadano}<br>
+                    <b>Estado:</b> <span style="font-weight: bold; color: #ff4757;">${inc.estado}</span><br>
+                    <b>📍</b> ${inc.ubicacion_texto}<br>
+                    <button class="btn-submit" style="padding: 6px; font-size: 0.8rem; width: 100%; background: #004d35; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 8px; font-weight: bold;" onclick="navegarA('detalle-incidente', '${inc.id}')">Atender Caso</button>
+                </div>
+            `;
+            L.marker([inc.latitud, inc.longitud], { icon: sosIcono })
+                .addTo(instanciaMapaLeaflet)
+                .bindPopup(popupContenido);
+        }
+    });
 };
 
 // --- LOGICA CONSUMIDORA DE DATOS DE REPORTE ---
@@ -432,12 +469,29 @@ function escucharAlertasRealtime() {
     
     supabaseClient
         .channel('cambios-incidentes')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alertas_sos' }, (payload) => {
-            console.log("🚨 NUEVA ALERTA SOS DETECTADA:", payload.new);
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'alertas_sos' }, async (payload) => {
+            console.log("🚨 CAMBIO EN ALERTA SOS:", payload);
             
+            // Recargar caché local
+            await cargarIncidentesDesdeSupabase();
+            
+            // Si el panel de control está activo, redibujar contadores e incidentes
             const linkPanel = document.getElementById('menu-panel');
             if (linkPanel && linkPanel.classList.contains('active')) {
                 renderPanelControl();
+            }
+            
+            // Si el listado de denuncias está activo, redibujar tabla
+            const linkDenuncias = document.getElementById('menu-denuncias');
+            if (linkDenuncias && linkDenuncias.classList.contains('active')) {
+                renderDenunciasRecibidas();
+            }
+
+            // Si el mapa de patrullas está activo, redibujar markers
+            const linkPatrullas = document.getElementById('menu-patrullas');
+            if (linkPatrullas && linkPatrullas.classList.contains('active')) {
+                await renderPatrullasEnSector();
+                inicializarMapaOperativoConcepcion();
             }
         })
         .subscribe();
