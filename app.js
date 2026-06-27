@@ -94,9 +94,18 @@ window.inicializarMapaOperativoConcepcion = function() {
     // 2. Pintar alertas SOS activas de Supabase de forma dinámica
     const alertasActivas = cacheIncidentesGlobal.filter(inc => inc.estado !== 'RESUELTO');
 
-    // Icono rojo personalizado para alertas críticas
-    const sosIcono = L.icon({
+    // Iconos personalizados de Leaflet
+    const sosIconoRed = L.icon({
         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    });
+
+    const delitoIconoOrange = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
         iconSize: [25, 41],
         iconAnchor: [12, 41],
@@ -106,17 +115,22 @@ window.inicializarMapaOperativoConcepcion = function() {
 
     alertasActivas.forEach(inc => {
         if (inc.latitud && inc.longitud) {
+            const esSOS = inc.categoria_tag === 'SOS';
+            const iconToUse = esSOS ? sosIconoRed : delitoIconoOrange;
+            const headerText = esSOS ? '🚨 ALERTA DE URGENCIA' : `📁 DELITO MENOR (${inc.categoria_tag})`;
+            const headerColor = esSOS ? '#ff4757' : '#f97316';
+
             const popupContenido = `
                 <div style="font-family: sans-serif; font-size: 0.9rem; line-height: 1.4; width: 180px;">
-                    <strong style="color: #ff4757; font-size: 0.95rem; display: block; margin-bottom: 4px;">🚨 ALERTA SOS CRÍTICA</strong>
+                    <strong style="color: ${headerColor}; font-size: 0.9rem; display: block; margin-bottom: 4px;">${headerText}</strong>
                     <b>Ciudadano:</b> ${inc.nombre_ciudadano}<br>
                     <b>RUT:</b> ${inc.rut_ciudadano}<br>
-                    <b>Estado:</b> <span style="font-weight: bold; color: #ff4757;">${inc.estado}</span><br>
-                    <b>📍</b> ${inc.ubicacion_texto}<br>
+                    <b>Estado:</b> <span style="font-weight: bold; color: ${headerColor};">${inc.estado}</span><br>
+                    <b style="font-size:0.75rem;">📍</b> <span style="font-size:0.75rem; color:#475569;">${inc.ubicacion_texto}</span><br>
                     <button class="btn-submit" style="padding: 6px; font-size: 0.8rem; width: 100%; background: #004d35; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 8px; font-weight: bold;" onclick="navegarA('detalle-incidente', '${inc.id}')">Atender Caso</button>
                 </div>
             `;
-            L.marker([inc.latitud, inc.longitud], { icon: sosIcono })
+            L.marker([inc.latitud, inc.longitud], { icon: iconToUse })
                 .addTo(instanciaMapaLeaflet)
                 .bindPopup(popupContenido);
         }
@@ -388,8 +402,12 @@ async function renderDetailIndividualIncidente(idIncidente) {
     let badgeColor = '#ff4757';
     if (inc.estado === 'RESUELTO') badgeColor = '#10b981';
     if (inc.estado === 'EN ATENCION') badgeColor = '#3b82f6';
+    if (inc.estado === 'PENDIENTE') badgeColor = '#f97316'; // Naranja para delitos menores
 
     const horaExpediente = new Date(inc.creado_al).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+    
+    // Rótulo dinámico para urgencias vs delitos menores
+    const labelTipo = (inc.categoria_tag === 'SOS') ? 'Urgencia' : `Delito Menor (${inc.categoria_tag})`;
 
     document.getElementById('contenedor-modulo-detalle-vivo').innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; width:100%;">
@@ -407,7 +425,7 @@ async function renderDetailIndividualIncidente(idIncidente) {
                         <h2 style="font-size:1.8rem; font-weight:800; color:var(--texto-oscuro);">${inc.id.substring(0,6).toUpperCase()}</h2>
                         <span style="background:${badgeColor}15; color:${badgeColor}; font-size:0.75rem; font-weight:bold; padding:4px 10px; border-radius:4px; text-transform:uppercase;">● ${inc.estado}</span>
                     </div>
-                    <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:var(--texto-mutated); font-size:1.05rem;">⚠️ Urgencia: ${inc.nombre_ciudadano} (RUT: ${inc.rut_ciudadano})</div>
+                    <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:var(--texto-mutated); font-size:1.05rem;">⚠️ ${labelTipo}: ${inc.nombre_ciudadano} (RUT: ${inc.rut_ciudadano})</div>
                 </div>
                 <div style="text-align:right; color:var(--texto-mutated); font-size:0.9rem;">
                     <div style="display:flex; align-items:center; gap:6px; font-weight:600;">🕒 ${horaExpediente}</div>
