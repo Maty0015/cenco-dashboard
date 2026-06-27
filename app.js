@@ -51,6 +51,7 @@ window.procesarLoginCenco = function(e) {
         document.getElementById('menu-patrullas').innerHTML = `<svg width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1 .4-1 1v7c0 .6.4 1 1 1h1"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg> Derivación Patrullas`;
 
         navegarA('panel');
+        escucharAlertasRealtime(); // Activa la escucha instantánea desde Supabase
     } else {
         alert("Credenciales institucionales incorrectas.");
     }
@@ -88,9 +89,9 @@ window.inicializarMapaOperativoConcepcion = function() {
     L.marker([-36.8290, -73.0398]).addTo(instanciaMapaLeaflet).bindPopup('<b>SOS-892</b> - Alerta Activa Sorda').openPopup();
 };
 
-// --- LOGICA CONSUMIDORA DE DATOS DE REPORTE ---
+// --- LOGICA CONSUMIDORA DE DATOS DE REPORTE (CORREGIDO TABLA alertas_sos) ---
 async function cargarIncidentesDesdeSupabase() {
-    const { data: incidentes, error } = await supabaseClient.from('incidentes_cenco').select('*').order('created_at', { ascending: false });
+    const { data: incidentes, error } = await supabaseClient.from('alertas_sos').select('*').order('creado_al', { ascending: false });
     if (!error && incidentes) {
         cacheIncidentesGlobal = incidentes;
     }
@@ -108,13 +109,12 @@ async function renderPanelControl() {
     await cargarPatrullasDesdeSupabase();
     iniciarRelojGlobal();
 
-    const totalSOS = cacheIncidentesGlobal.filter(i => i.estado_procedimiento === 'CRÍTICO' || i.categoria_tag === 'SOS').length;
-    const totalVideos = cacheIncidentesGlobal.filter(i => i.categoria_tag === 'Videollamada' && i.estado_procedimiento !== 'RESUELTO').length;
+    const totalSOS = cacheIncidentesGlobal.filter(i => i.estado === 'CRÍTICO' || i.categoria_tag === 'SOS').length;
+    const totalVideos = cacheIncidentesGlobal.filter(i => i.categoria_tag === 'Videollamada' && i.estado !== 'RESUELTO').length;
     
     // Contamos dinámicamente los furgones con el tag disponible en Supabase
     const patrullasDisponibles = cachePatrullasGlobal.filter(p => p.estado_vehiculo === 'disponible').length || 12;
 
-    // CORREGIDO: Se reincorporan las tarjetas de Patrullas Disponibles y Casos Resueltos al Grid
     document.getElementById('contenedor-contadores-dinamicos').innerHTML = `
         <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
             <div style="display:flex; align-items:center; gap:15px; width:100%;">
@@ -152,8 +152,8 @@ async function renderPanelControl() {
     document.getElementById('dropdown-notificaciones-cenco').style.display = "none";
     document.getElementById('dropdown-lista-alertas-cuerpo').innerHTML = cacheIncidentesGlobal.slice(0, 3).map(i => `
         <div style="padding: 8px; border-bottom: 1px solid #f1f5f9; display:flex; flex-direction:column; gap:4px; font-size:0.8rem;">
-            <div style="display:flex; justify-content:space-between; font-weight:700;"><span>${i.id}</span><span style="color:var(--rojo-critico);">${calcularTiempoTranscurrido(i.created_at)}</span></div>
-            <p style="color:var(--texto-mutated); margin:0;">${i.tipo_incidente}</p>
+            <div style="display:flex; justify-content:space-between; font-weight:700;"><span>${i.id.substring(0,6).toUpperCase()}</span><span style="color:var(--rojo-critico);">${calcularTiempoTranscurrido(i.creado_al)}</span></div>
+            <p style="color:var(--texto-mutated); margin:0;">Alerta SOS Inclusiva</p>
         </div>
     `).join('');
 
@@ -174,11 +174,11 @@ window.dibujarListaActividadRecienteHTML = function(arregloIncidentes) {
         let colorCirculo = '#3b82f6'; 
         let vistaDestino = (inc.categoria_tag === 'Videollamada') ? 'videos' : 'detalle-incidente';
 
-        if (inc.estado_procedimiento === 'CRÍTICO') { colorCirculo = '#ff4757'; }
-        else if (inc.estado_procedimiento === 'PENDIENTE') { colorCirculo = '#f97316'; }
+        if (inc.estado === 'CRÍTICO') { colorCirculo = '#ff4757'; }
+        else if (inc.estado === 'PENDIENTE') { colorCirculo = '#f97316'; }
 
         const estiloBorde = (index < arregloIncidentes.length - 1) ? 'border-bottom:1px solid #f1f5f9; padding-bottom:12px;' : '';
-        const tiempoRelativoStr = calcularTiempoTranscurrido(inc.created_at);
+        const tiempoRelativoStr = calcularTiempoTranscurrido(inc.creado_al);
 
         htmlLista += `
             <div style="display:flex; justify-content:space-between; align-items:center; ${estiloBorde}">
@@ -186,7 +186,7 @@ window.dibujarListaActividadRecienteHTML = function(arregloIncidentes) {
                     <span style="width:10px; height:10px; background:${colorCirculo}; border-radius:50%;"></span>
                     <div>
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-weight:700; font-size:0.95rem;">${inc.id}</span>
+                            <span style="font-weight:700; font-size:0.95rem;">${inc.id.substring(0,6).toUpperCase()}</span>
                             <span style="background:#f1f5f9; color:var(--texto-mutated); font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold; text-transform:uppercase;">${inc.categoria_tag}</span>
                         </div>
                         <p style="color:var(--texto-mutated); font-size:0.85rem; margin-top:6px;">${inc.ubicacion_texto}</p>
@@ -262,10 +262,10 @@ async function renderPerfilOperadorFicha() {
         contenedorHistorial.innerHTML = cacheIncidentesGlobal.map(i => `
             <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:15px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                 <div>
-                    <strong style="color:var(--texto-oscuro); font-size:1rem;">${i.id}</strong> - <span style="font-size:0.9rem;">${i.tipo_incidente}</span>
+                    <strong style="color:var(--texto-oscuro); font-size:1rem;">${i.id.substring(0,6).toUpperCase()}</strong> - <span>Alerta SOS Inclusiva</span>
                     <p style="font-size:0.8rem; color:var(--texto-mutated); margin-top:4px;">📍 ${i.ubicacion_texto}</p>
                 </div>
-                <span style="font-weight:bold; font-size:0.8rem; color:#004d35; text-transform:uppercase;">[${i.estado_procedimiento}]</span>
+                <span style="font-weight:bold; font-size:0.8rem; color:#004d35; text-transform:uppercase;">[${i.estado}]</span>
             </div>
         `).join('') || '<p style="color:var(--texto-mutated)">No se registran bitácoras hoy en el turno.</p>';
     }
@@ -303,24 +303,24 @@ async function renderDenunciasRecibidas() {
     if (!tbody) return;
 
     tbody.innerHTML = cacheIncidentesGlobal.map(inc => {
-        let badgeColor = '#f97316'; 
-        if (inc.estado_procedimiento === 'CRÍTICO' || inc.estado_procedimiento === 'RESUELTO') badgeColor = '#ff4757';
-        if (inc.estado_procedimiento === 'EN ATENCION') badgeColor = '#3b82f6';
+        let badgeColor = '#ff4757'; 
+        if (inc.estado === 'RESUELTO') badgeColor = '#10b981';
+        if (inc.estado === 'EN ATENCION') badgeColor = '#3b82f6';
 
-        const horaTexto = new Date(inc.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        const horaTexto = new Date(inc.creado_al).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
 
         return `
             <tr style="border-bottom: 1px solid #e2e8f0; vertical-align: top; background:#fff;">
                 <td style="padding: 20px; white-space: nowrap;">
-                    <div style="font-weight: bold; margin-bottom: 8px; color:var(--texto-oscuro); font-size:1rem;">${inc.id}</div>
-                    <span style="background:${badgeColor}15; color:${badgeColor}; font-size:0.7rem; font-weight:bold; padding:4px 8px; border-radius:4px; text-transform:uppercase; white-space: nowrap; display: inline-block;">● ${inc.estado_procedimiento}</span>
+                    <div style="font-weight: bold; margin-bottom: 8px; color:var(--texto-oscuro); font-size:1rem;">${inc.id.substring(0,6).toUpperCase()}</div>
+                    <span style="background:${badgeColor}15; color:${badgeColor}; font-size:0.7rem; font-weight:bold; padding:4px 8px; border-radius:4px; text-transform:uppercase; white-space: nowrap; display: inline-block;">● ${inc.estado}</span>
                 </td>
                 <td style="padding: 20px;">
                     <div style="font-weight: bold; color: var(--texto-oscuro); display: flex; align-items: center; gap: 6px; font-size:1rem;">
-                        ${inc.categoria_tag === 'SOS' ? '⚠️' : '👤'} ${inc.tipo_incidente}
+                        ⚠️ Alerta SOS Inclusiva
                     </div>
-                    <div style="font-size: 0.85rem; color: var(--texto-mutated); margin-top: 5px;">👤 ${inc.nombre_usuario_anonimo || 'Anónimo'}</div>
-                    <div style="font-size: 0.85rem; color: var(--texto-mutated); font-style: italic; margin-top: 10px; line-height: 1.4; background:#f8fafc; padding:8px 12px; border-radius:6px; border-left:3px solid #cbd5e1;">"${inc.detalles_reporte}"</div>
+                    <div style="font-size: 0.85rem; color: var(--texto-mutated); margin-top: 5px;">👤 ${inc.nombre_ciudadano} (RUT: ${inc.rut_ciudadano})</div>
+                    <div style="font-size: 0.85rem; color: var(--texto-mutated); font-style: italic; margin-top: 10px; line-height: 1.4; background:#f8fafc; padding:8px 12px; border-radius:6px; border-left:3px solid #cbd5e1;">"Alerta Crítica gatillada desde terminal móvil."</div>
                 </td>
                 <td style="padding: 20px; color: var(--texto-oscuro); font-size: 0.9rem; font-weight:500;">📍 ${inc.ubicacion_texto}</td>
                 <td style="padding: 20px; color: var(--texto-mutated); font-size: 0.9rem; white-space: nowrap;">🕒 ${horaTexto}</td>
@@ -333,21 +333,20 @@ async function renderDenunciasRecibidas() {
 }
 
 async function renderDetailIndividualIncidente(idIncidente) {
-    const { data: inc } = await supabaseClient.from('incidentes_cenco').select('*').eq('id', idIncidente).single();
+    const { data: inc } = await supabaseClient.from('alertas_sos').select('*').eq('id', idIncidente).single();
     if (!inc) return;
 
-    let badgeColor = '#f97316';
-    if (inc.estado_procedimiento === 'CRÍTICO' || inc.estado_procedimiento === 'RESUELTO') badgeColor = '#ff4757';
-    if (inc.estado_procedimiento === 'EN ATENCION') badgeColor = '#3b82f6';
+    let badgeColor = '#ff4757';
+    if (inc.estado === 'RESUELTO') badgeColor = '#10b981';
+    if (inc.estado === 'EN ATENCION') badgeColor = '#3b82f6';
 
-    const horaExpediente = new Date(inc.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+    const horaExpediente = new Date(inc.creado_al).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
 
     document.getElementById('contenedor-modulo-detalle-vivo').innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; width:100%;">
             <button onclick="navegarA('denuncias')" style="background:none; border:none; color:var(--texto-oscuro); font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; font-size:0.95rem;">← Volver a Denuncias</button>
             <div style="display:flex; gap:12px;">
                 <button class="btn-submit" style="background:#004d35; width:auto; padding:10px 20px;" onclick="navegarA('patrullas')">Derivar Patrulla</button>
-                <button class="btn-submit" style="background:#3b82f6; width:auto; padding:10px 20px;" onclick="navegarA('videos')">Videollamada LSCh</button>
                 <button class="btn-submit" style="background:#10b981; width:auto; padding:10px 20px;" onclick="window.cambiarEstadoIncidenteDirecto('${inc.id}', 'RESUELTO')">Marcar como Resuelto</button>
             </div>
         </div>
@@ -356,14 +355,14 @@ async function renderDetailIndividualIncidente(idIncidente) {
             <div style="background:#fff; padding:25px; border-radius:8px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:flex-start;">
                 <div>
                     <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
-                        <h2 style="font-size:1.8rem; font-weight:800; color:var(--texto-oscuro);">${inc.id}</h2>
-                        <span style="background:${badgeColor}15; color:${badgeColor}; font-size:0.75rem; font-weight:bold; padding:4px 10px; border-radius:4px; text-transform:uppercase;">● ${inc.estado_procedimiento}</span>
+                        <h2 style="font-size:1.8rem; font-weight:800; color:var(--texto-oscuro);">${inc.id.substring(0,6).toUpperCase()}</h2>
+                        <span style="background:${badgeColor}15; color:${badgeColor}; font-size:0.75rem; font-weight:bold; padding:4px 10px; border-radius:4px; text-transform:uppercase;">● ${inc.estado}</span>
                     </div>
-                    <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:var(--texto-mutated); font-size:1.05rem;">⚠️ ${inc.tipo_incidente}</div>
+                    <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:var(--texto-mutated); font-size:1.05rem;">⚠️ SOS: ${inc.nombre_ciudadano} (RUT: ${inc.rut_ciudadano})</div>
                 </div>
                 <div style="text-align:right; color:var(--texto-mutated); font-size:0.9rem;">
                     <div style="display:flex; align-items:center; gap:6px; font-weight:600;">🕒 ${horaExpediente}</div>
-                    <p style="margin-top:6px; font-weight:500;">Hoy, 10 Mayo 2026</p>
+                    <p style="margin-top:6px; font-weight:500;">Ubicación: ${inc.ubicacion_texto}</p>
                 </div>
             </div>
         </div>
@@ -371,8 +370,8 @@ async function renderDetailIndividualIncidente(idIncidente) {
 }
 
 window.cambiarEstadoIncidenteDirecto = function(id, nuevoEstado) {
-    supabaseClient.from('incidentes_cenco').update({ estado_procedimiento: nuevoEstado }).eq('id', id).then(() => {
-        alert(`🚨 Procedimiento ${id} cerrado de forma conforme.`);
+    supabaseClient.from('alertas_sos').update({ estado: nuevoEstado }).eq('id', id).then(() => {
+        alert(`🚨 Procedimiento cerrado de forma conforme.`);
         navegarA('panel');
     });
 };
@@ -385,12 +384,12 @@ window.abrirModalDespacho = async function(idPatrulla) {
     modal.style.display = "flex";
 
     await cargarIncidentesDesdeSupabase();
-    const pendientes = cacheIncidentesGlobal.filter(i => i.estado_procedimiento !== 'RESUELTO');
+    const pendientes = cacheIncidentesGlobal.filter(i => i.estado !== 'RESUELTO');
 
     cuerpoModal.innerHTML = pendientes.map(i => `
         <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; display:flex; flex-direction:column; gap:10px; margin-bottom:5px;">
-            <div style="display:flex; justify-content:space-between;"><strong>${i.id}</strong> <span>● ${i.estado_procedimiento}</span></div>
-            <p style="font-size:0.85rem; margin:0;"><b>${i.tipo_incidente}</b> - ${i.ubicacion_texto}</p>
+            <div style="display:flex; justify-content:space-between;"><strong>${i.id.substring(0,6).toUpperCase()}</strong> <span>● ${i.estado}</span></div>
+            <p style="font-size:0.85rem; margin:0;"><b>Alerta SOS</b> - ${i.ubicacion_texto}</p>
             <button onclick="window.asignarPatrullaADenuncia('${i.id}')" class="btn-submit" style="background:#004d35; padding:8px; font-size:0.85rem; width:100%;">Asignar a esta denuncia</button>
         </div>
     `).join('');
@@ -399,7 +398,7 @@ window.abrirModalDespacho = async function(idPatrulla) {
 window.cerrarModalDespacho = function() { document.getElementById('modal-despacho-patrulla').style.display = "none"; };
 
 window.asignarPatrullaADenuncia = async function(idDenuncia) {
-    await supabaseClient.from('incidentes_cenco').update({ estado_procedimiento: 'EN ATENCION' }).eq('id', idDenuncia);
+    await supabaseClient.from('alertas_sos').update({ estado: 'EN ATENCION' }).eq('id', idDenuncia);
     await supabaseClient.from('patrullas_cenco').update({ estado_vehiculo: 'en procedimiento' }).eq('id', patrullaSeleccionadaParaDespacho);
     alert(`Unidad ${patrullaSeleccionadaParaDespacho} asignada.`);
     window.cerrarModalDespacho();
@@ -408,12 +407,29 @@ window.asignarPatrullaADenuncia = async function(idDenuncia) {
 
 window.filtrarAlertasTurno = function() {
     const text = document.getElementById('buscador-alertas-input').value.toLowerCase().trim();
-    const filtrados = cacheIncidentesGlobal.filter(i => i.id.toLowerCase().includes(text) || i.tipo_incidente.toLowerCase().includes(text));
+    const filtrados = cacheIncidentesGlobal.filter(i => i.id.toLowerCase().includes(text) || i.nombre_ciudadano.toLowerCase().includes(text));
     window.dibujarListaActividadRecienteHTML(filtrados);
 };
 
 window.conmutarDropdownNotificaciones = function(e) { e.stopPropagation(); const d = document.getElementById('dropdown-notificaciones-cenco'); d.style.display = d.style.display === "none" ? "flex" : "none"; };
 document.addEventListener('click', () => { const d = document.getElementById('dropdown-notificaciones-cenco'); if(d) d.style.display = "none"; });
+
+// --- 🌐 ENLACE EN TIEMPO REAL (REALTIME LISTENERS CORREGIDO) ---
+function escucharAlertasRealtime() {
+    console.log("🟢 Central CENCO escuchando la tabla 'alertas_sos' en tiempo real...");
+    
+    supabaseClient
+        .channel('cambios-incidentes')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alertas_sos' }, (payload) => {
+            console.log("🚨 NUEVA ALERTA SOS DETECTADA:", payload.new);
+            
+            const linkPanel = document.getElementById('menu-panel');
+            if (linkPanel && linkPanel.classList.contains('active')) {
+                renderPanelControl();
+            }
+        })
+        .subscribe();
+}
 
 // --- SISTEMA DE ENRUTAMIENTO SPA EN CASCADA COMPACTO ---
 function navegarA(vista, dataParam = null) {
