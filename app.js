@@ -148,7 +148,7 @@ async function renderPanelControl() {
         <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
             <div style="display:flex; align-items:center; gap:15px; width:100%;">
                 <div class="icon-box" style="background:#fee2e2; color:#ef4444; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                <div class="card-content"><p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Alertas SOS Activas</p><h3 id="contador-sos-vivo">0</h3></div>
+                <div class="card-content"><p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Urgencias Activas</p><h3 id="contador-sos-vivo">0</h3></div>
             </div>
             <a href="#" onclick="event.preventDefault(); navegarA('denuncias')" style="font-size:0.8rem; color:var(--verde-carabinero); text-decoration:none; font-weight:600; margin-top:4px;">Ver detalles →</a>
         </div>
@@ -198,7 +198,7 @@ async function renderPanelControl() {
         document.getElementById('dropdown-lista-alertas-cuerpo').innerHTML = cacheIncidentesGlobal.slice(0, 3).map(i => `
             <div style="padding: 8px; border-bottom: 1px solid #f1f5f9; display:flex; flex-direction:column; gap:4px; font-size:0.8rem;">
                 <div style="display:flex; justify-content:space-between; font-weight:700;"><span>${i.id.substring(0,6).toUpperCase()}</span><span style="color:var(--rojo-critico);">${calcularTiempoTranscurrido(i.creado_al)}</span></div>
-                <p style="color:var(--texto-mutated); margin:0;">Alerta SOS Inclusiva</p>
+                <p style="color:var(--texto-mutated); margin:0;">Reporte de Urgencia Inclusivo</p>
             </div>
         `).join('');
 
@@ -311,7 +311,7 @@ async function renderPerfilOperadorFicha() {
         contenedorHistorial.innerHTML = cacheIncidentesGlobal.map(i => `
             <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:15px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                 <div>
-                    <strong style="color:var(--texto-oscuro); font-size:1rem;">${i.id.substring(0,6).toUpperCase()}</strong> - <span>Alerta SOS Inclusiva</span>
+                    <strong style="color:var(--texto-oscuro); font-size:1rem;">${i.id.substring(0,6).toUpperCase()}</strong> - <span>Reporte de Urgencia Inclusivo</span>
                     <p style="font-size:0.8rem; color:var(--texto-mutated); margin-top:4px;">📍 ${i.ubicacion_texto}</p>
                 </div>
                 <span style="font-weight:bold; font-size:0.8rem; color:#004d35; text-transform:uppercase;">[${i.estado}]</span>
@@ -366,7 +366,7 @@ async function renderDenunciasRecibidas() {
                 </td>
                 <td style="padding: 20px;">
                     <div style="font-weight: bold; color: var(--texto-oscuro); display: flex; align-items: center; gap: 6px; font-size:1rem;">
-                        ⚠️ Alerta SOS Inclusiva
+                        ⚠️ Reporte de Urgencia Inclusivo
                     </div>
                     <div style="font-size: 0.85rem; color: var(--texto-mutated); margin-top: 5px;">👤 ${inc.nombre_ciudadano} (RUT: ${inc.rut_ciudadano})</div>
                     <div style="font-size: 0.85rem; color: var(--texto-mutated); font-style: italic; margin-top: 10px; line-height: 1.4; background:#f8fafc; padding:8px 12px; border-radius:6px; border-left:3px solid #cbd5e1;">"Alerta Crítica gatillada desde terminal móvil."</div>
@@ -407,7 +407,7 @@ async function renderDetailIndividualIncidente(idIncidente) {
                         <h2 style="font-size:1.8rem; font-weight:800; color:var(--texto-oscuro);">${inc.id.substring(0,6).toUpperCase()}</h2>
                         <span style="background:${badgeColor}15; color:${badgeColor}; font-size:0.75rem; font-weight:bold; padding:4px 10px; border-radius:4px; text-transform:uppercase;">● ${inc.estado}</span>
                     </div>
-                    <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:var(--texto-mutated); font-size:1.05rem;">⚠️ SOS: ${inc.nombre_ciudadano} (RUT: ${inc.rut_ciudadano})</div>
+                    <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:var(--texto-mutated); font-size:1.05rem;">⚠️ Urgencia: ${inc.nombre_ciudadano} (RUT: ${inc.rut_ciudadano})</div>
                 </div>
                 <div style="text-align:right; color:var(--texto-mutated); font-size:0.9rem;">
                     <div style="display:flex; align-items:center; gap:6px; font-weight:600;">🕒 ${horaExpediente}</div>
@@ -438,7 +438,7 @@ window.abrirModalDespacho = async function(idPatrulla) {
     cuerpoModal.innerHTML = pendientes.map(i => `
         <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; display:flex; flex-direction:column; gap:10px; margin-bottom:5px;">
             <div style="display:flex; justify-content:space-between;"><strong>${i.id.substring(0,6).toUpperCase()}</strong> <span>● ${i.estado}</span></div>
-            <p style="font-size:0.85rem; margin:0;"><b>Alerta SOS</b> - ${i.ubicacion_texto}</p>
+            <p style="font-size:0.85rem; margin:0;"><b>Reporte de Urgencia</b> - ${i.ubicacion_texto}</p>
             <button onclick="window.asignarPatrullaADenuncia('${i.id}')" class="btn-submit" style="background:#004d35; padding:8px; font-size:0.85rem; width:100%;">Asignar a esta denuncia</button>
         </div>
     `).join('');
