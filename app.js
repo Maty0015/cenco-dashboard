@@ -84,8 +84,6 @@ window.inicializarMapaOperativoConcepcion = function() {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap'
     }).addTo(instanciaMapaLeaflet);
-
-    // 🧹 REMOVIDOS MARCADORES DE SIMULACIÓN FIJOS PARA COMENZAR EN CERO ABSOLUTO
 };
 
 // --- LOGICA CONSUMIDORA DE DATOS DE REPORTE ---
@@ -103,22 +101,17 @@ async function cargarPatrullasDesdeSupabase() {
     }
 }
 
+// 🚀 OPTIMIZADO: Carga paralela e instantánea de la interfaz profesional
 async function renderPanelControl() {
-    await cargarIncidentesDesdeSupabase();
-    await cargarPatrullasDesdeSupabase();
+    // A) Encender el reloj de forma inmediata
     iniciarRelojGlobal();
 
-    const totalSOS = cacheIncidentesGlobal.filter(i => i.estado === 'CRÍTICO' || i.categoria_tag === 'SOS').length;
-    const totalVideos = cacheIncidentesGlobal.filter(i => i.categoria_tag === 'Videollamada' && i.estado !== 'RESUELTO').length;
-    
-    // 🛠️ CORREGIDO: Entrega un cero absoluto de respaldo si no hay registros activos en Supabase
-    const patrullasDisponibles = cachePatrullasGlobal.filter(p => p.estado_vehiculo === 'disponible').length || 0;
-
+    // B) Pintar la maqueta con ceros por defecto para que cargue en 1ms
     document.getElementById('contenedor-contadores-dinamicos').innerHTML = `
         <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
             <div style="display:flex; align-items:center; gap:15px; width:100%;">
                 <div class="icon-box" style="background:#fee2e2; color:#ef4444; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                <div class="card-content"><p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Alertas SOS Activas</p><h3>${totalSOS}</h3></div>
+                <div class="card-content"><p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Alertas SOS Activas</p><h3 id="contador-sos-vivo">0</h3></div>
             </div>
             <a href="#" onclick="event.preventDefault(); navegarA('denuncias')" style="font-size:0.8rem; color:var(--verde-carabinero); text-decoration:none; font-weight:600; margin-top:4px;">Ver detalles →</a>
         </div>
@@ -126,7 +119,7 @@ async function renderPanelControl() {
         <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
             <div style="display:flex; align-items:center; gap:15px; width:100%;">
                 <div class="icon-box" style="background:#ffedd5; color:#f97316; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg></div>
-                <div class="card-content"><p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Videollamadas en Espera</p><h3>${totalVideos}</h3></div>
+                <div class="card-content"><p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Videollamadas en Espera</p><h3 id="contador-video-vivo">0</h3></div>
             </div>
             <a href="#" onclick="event.preventDefault(); navegarA('videos')" style="font-size:0.8rem; color:var(--verde-carabinero); text-decoration:none; font-weight:600; margin-top:4px;">Ver detalles →</a>
         </div>
@@ -134,7 +127,7 @@ async function renderPanelControl() {
         <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
             <div style="display:flex; align-items:center; gap:15px; width:100%;">
                 <div class="icon-box" style="background:#dcfce7; color:#22c55e; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1 .4-1 1v7c0 .6.4 1 1 1h1"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg></div>
-                <div class="card-content"><p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Patrullas Disponibles</p><h3>${patrullasDisponibles}</h3></div>
+                <div class="card-content"><p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Patrullas Disponibles</p><h3 id="contador-patrulla-vivo">0</h3></div>
             </div>
             <a href="#" onclick="event.preventDefault(); navegarA('patrullas')" style="font-size:0.8rem; color:var(--verde-carabinero); text-decoration:none; font-weight:600; margin-top:4px;">Ver detalles →</a>
         </div>
@@ -149,14 +142,34 @@ async function renderPanelControl() {
     `;
 
     document.getElementById('dropdown-notificaciones-cenco').style.display = "none";
-    document.getElementById('dropdown-lista-alertas-cuerpo').innerHTML = cacheIncidentesGlobal.slice(0, 3).map(i => `
-        <div style="padding: 8px; border-bottom: 1px solid #f1f5f9; display:flex; flex-direction:column; gap:4px; font-size:0.8rem;">
-            <div style="display:flex; justify-content:space-between; font-weight:700;"><span>${i.id.substring(0,6).toUpperCase()}</span><span style="color:var(--rojo-critico);">${calcularTiempoTranscurrido(i.creado_al)}</span></div>
-            <p style="color:var(--texto-mutated); margin:0;">Alerta SOS Inclusiva</p>
-        </div>
-    `).join('');
+    document.getElementById('contenedor-actividad-realtime').innerHTML = '<p style="color: var(--texto-mutated); font-size:0.9rem; padding: 10px 0;">Sincronizando con la central de datos fiscal...</p>';
 
-    window.dibujarListaActividadRecienteHTML(cacheIncidentesGlobal);
+    // C) Resolver la red en segundo plano sin interrumpir visualmente la carga
+    try {
+        await cargarIncidentesDesdeSupabase();
+        await cargarPatrullasDesdeSupabase();
+
+        const totalSOS = cacheIncidentesGlobal.filter(i => i.estado === 'CRÍTICO' || i.categoria_tag === 'SOS').length;
+        const totalVideos = cacheIncidentesGlobal.filter(i => i.categoria_tag === 'Videollamada' && i.estado !== 'RESUELTO').length;
+        const patrullasDisponibles = cachePatrullasGlobal.filter(p => p.estado_vehiculo === 'disponible').length || 0;
+
+        // Inyectar datos reales en caliente sobre los selectores dinámicos
+        if (document.getElementById('contador-sos-vivo')) document.getElementById('contador-sos-vivo').innerText = totalSOS;
+        if (document.getElementById('contador-video-vivo')) document.getElementById('contador-video-vivo').innerText = totalVideos;
+        if (document.getElementById('contador-patrulla-vivo')) document.getElementById('contador-patrulla-vivo').innerText = patrullasDisponibles;
+
+        document.getElementById('dropdown-lista-alertas-cuerpo').innerHTML = cacheIncidentesGlobal.slice(0, 3).map(i => `
+            <div style="padding: 8px; border-bottom: 1px solid #f1f5f9; display:flex; flex-direction:column; gap:4px; font-size:0.8rem;">
+                <div style="display:flex; justify-content:space-between; font-weight:700;"><span>${i.id.substring(0,6).toUpperCase()}</span><span style="color:var(--rojo-critico);">${calcularTiempoTranscurrido(i.creado_al)}</span></div>
+                <p style="color:var(--texto-mutated); margin:0;">Alerta SOS Inclusiva</p>
+            </div>
+        `).join('');
+
+        window.dibujarListaActividadRecienteHTML(cacheIncidentesGlobal);
+    } catch (err) {
+        console.error("Falla asíncrona de fondo:", err);
+        document.getElementById('contenedor-actividad-realtime').innerHTML = '<p style="color: var(--texto-mutated); font-size:0.9rem; padding: 10px 0;">Error de red en segundo plano.</p>';
+    }
 }
 
 window.dibujarListaActividadRecienteHTML = function(arregloIncidentes) {
