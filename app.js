@@ -51,7 +51,7 @@ window.procesarLoginCenco = function(e) {
         document.getElementById('menu-patrullas').innerHTML = `<svg width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1 .4-1 1v7c0 .6.4 1 1 1h1"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg> Derivación Patrullas`;
 
         navegarA('panel');
-        escucharAlertasRealtime(); // Activa la escucha instantánea desde Supabase
+        escucharAlertasRealtime(); 
     } else {
         alert("Credenciales institucionales incorrectas.");
     }
@@ -85,11 +85,10 @@ window.inicializarMapaOperativoConcepcion = function() {
         attribution: '&copy; OpenStreetMap'
     }).addTo(instanciaMapaLeaflet);
 
-    L.marker([-36.8262, -73.0503]).addTo(instanciaMapaLeaflet).bindPopup('<b>Z-8942</b> - Plaza Independencia');
-    L.marker([-36.8290, -73.0398]).addTo(instanciaMapaLeaflet).bindPopup('<b>SOS-892</b> - Alerta Activa Sorda').openPopup();
+    // 🧹 REMOVIDOS MARCADORES DE SIMULACIÓN FIJOS PARA COMENZAR EN CERO ABSOLUTO
 };
 
-// --- LOGICA CONSUMIDORA DE DATOS DE REPORTE (CORREGIDO TABLA alertas_sos) ---
+// --- LOGICA CONSUMIDORA DE DATOS DE REPORTE ---
 async function cargarIncidentesDesdeSupabase() {
     const { data: incidentes, error } = await supabaseClient.from('alertas_sos').select('*').order('creado_al', { ascending: false });
     if (!error && incidentes) {
@@ -112,8 +111,8 @@ async function renderPanelControl() {
     const totalSOS = cacheIncidentesGlobal.filter(i => i.estado === 'CRÍTICO' || i.categoria_tag === 'SOS').length;
     const totalVideos = cacheIncidentesGlobal.filter(i => i.categoria_tag === 'Videollamada' && i.estado !== 'RESUELTO').length;
     
-    // Contamos dinámicamente los furgones con el tag disponible en Supabase
-    const patrullasDisponibles = cachePatrullasGlobal.filter(p => p.estado_vehiculo === 'disponible').length || 12;
+    // 🛠️ CORREGIDO: Entrega un cero absoluto de respaldo si no hay registros activos en Supabase
+    const patrullasDisponibles = cachePatrullasGlobal.filter(p => p.estado_vehiculo === 'disponible').length || 0;
 
     document.getElementById('contenedor-contadores-dinamicos').innerHTML = `
         <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
@@ -143,7 +142,7 @@ async function renderPanelControl() {
         <div class="card-indicador" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px;">
             <div style="display:flex; align-items:center; gap:15px; width:100%;">
                 <div class="icon-box" style="background:#e0f2fe; color:#0ea5e9; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-                <div class="card-content"><p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Casos Resueltos (Hoy)</p><h3>45</h3></div>
+                <div class="card-content"><p style="color: var(--texto-mutated); font-size:0.85rem; font-weight:500;">Casos Resueltos (Hoy)</p><h3>0</h3></div>
             </div>
             <a href="#" onclick="event.preventDefault();" style="font-size:0.8rem; color:var(--texto-mutado); text-decoration:none; font-weight:500; margin-top:4px; cursor:default;">Corte diario automático</a>
         </div>
@@ -283,7 +282,7 @@ window.procesarRegistroNuevoCarro = async function(e) {
         tipo_vehiculo: tipo_vehiculo, 
         cuadrante: cuadrante, 
         tripulacion: tripulacion, 
-        operador_asignado_id: ID_OPERADOR_ACTIVO 
+        operador_assigned_id: ID_OPERADOR_ACTIVO 
     }]);
 
     if (error) return alert("Error al registrar carro policial: " + error.message);
