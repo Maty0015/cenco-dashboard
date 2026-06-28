@@ -59,10 +59,10 @@
 
             <div class="sidebar-footer">
                 <div class="perfil-operador" onclick="navegarA('perfil')" style="cursor: pointer; padding: 6px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">
-                    <div class="avatar">S1</div>
+                    <div class="avatar" id="sidebar-operador-avatar">--</div>
                     <div>
-                        <h4>Sargento 1ro Pérez</h4>
-                        <p>Operador LSCh ⚙️</p>
+                        <h4 id="sidebar-operador-nombre" style="font-size:0.85rem; font-weight:700; margin:0; color:#fff;">Cargando...</h4>
+                        <p id="sidebar-operador-rol" style="font-size:0.7rem; color:rgba(255,255,255,0.6); margin:2px 0 0 0;">Operador Central</p>
                     </div>
                 </div>
                 <a href="#" id="btn-logout" class="logout-link">➔ Cerrar Sesión</a>

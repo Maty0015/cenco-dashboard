@@ -52,6 +52,7 @@ window.procesarLoginCenco = function(e) {
 
         navegarA('panel');
         escucharAlertasRealtime(); 
+        window.actualizarSidebarOperadorDinamico();
     } else {
         alert("Credenciales institucionales incorrectas.");
     }
@@ -85,11 +86,44 @@ window.inicializarMapaOperativoConcepcion = function() {
         attribution: '&copy; OpenStreetMap'
     }).addTo(instanciaMapaLeaflet);
 
-    // 1. Pintar patrullas fijas en el cuadrante para referencia
-    L.marker([-36.8262, -73.0503]).addTo(instanciaMapaLeaflet)
-        .bindPopup('<b>🚔 Z-8942</b><br>Plaza Independencia<br><b>Estado:</b> Disponible');
-    L.marker([-36.8310, -73.0420]).addTo(instanciaMapaLeaflet)
-        .bindPopup('<b>🚔 Z-8922</b><br>Cuadrante 3<br><b>Estado:</b> En procedimiento');
+    // 1. Pintar patrullas de Supabase de forma dinámica en el mapa
+    const patrolGreenIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    });
+
+    const patrolBlueIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    });
+
+    cachePatrullasGlobal.forEach(p => {
+        if (p.latitud && p.longitud) {
+            const isDisp = p.estado_vehiculo === 'disponible';
+            const iconToUse = isDisp ? patrolGreenIcon : patrolBlueIcon;
+            
+            const popupContenido = `
+                <div style="font-family: sans-serif; font-size: 0.9rem; line-height: 1.4; width: 180px;">
+                    <strong style="color: #004d35; font-size: 0.95rem; display: block; margin-bottom: 4px;">🚔 PATRULLA: ${p.id}</strong>
+                    <b>Tipo:</b> ${p.tipo_vehiculo || 'Furgón'}<br>
+                    <b>Sector:</b> ${p.cuadrante || 'Sector Central'}<br>
+                    <b>Tripulación:</b> ${p.tripulacion || 'No asignada'}<br>
+                    <b>Estado:</b> <span style="font-weight: bold; color: ${isDisp ? '#10b981' : '#0ea5e9'};">${p.estado_vehiculo.toUpperCase()}</span>
+                </div>
+            `;
+            L.marker([p.latitud, p.longitud], { icon: iconToUse })
+                .addTo(instanciaMapaLeaflet)
+                .bindPopup(popupContenido);
+        }
+    });
 
     // 2. Pintar alertas SOS activas de Supabase de forma dinámica
     const alertasActivas = cacheIncidentesGlobal.filter(inc => inc.estado !== 'RESUELTO');
@@ -243,6 +277,13 @@ window.dibujarListaActividadRecienteHTML = function(arregloIncidentes) {
         const estiloBorde = (index < arregloIncidentes.length - 1) ? 'border-bottom:1px solid #f1f5f9; padding-bottom:12px;' : '';
         const tiempoRelativoStr = calcularTiempoTranscurrido(inc.creado_al);
 
+        let badgeEstado = '';
+        if (inc.estado === 'EN ATENCION') {
+            badgeEstado = `<span style="background:#dbeafe; color:#2563eb; font-size:0.65rem; font-weight:bold; padding:2px 6px; border-radius:4px; text-transform:uppercase; margin-left:4px;">En Camino</span>`;
+        } else if (inc.estado === 'RESUELTO') {
+            badgeEstado = `<span style="background:#dcfce7; color:#16a34a; font-size:0.65rem; font-weight:bold; padding:2px 6px; border-radius:4px; text-transform:uppercase; margin-left:4px;">Resuelto</span>`;
+        }
+
         htmlLista += `
             <div style="display:flex; justify-content:space-between; align-items:center; ${estiloBorde}">
                 <div style="display:flex; align-items:center; gap:12px;">
@@ -251,6 +292,7 @@ window.dibujarListaActividadRecienteHTML = function(arregloIncidentes) {
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span style="font-weight:700; font-size:0.95rem;">${inc.id.substring(0,6).toUpperCase()}</span>
                             <span style="background:#f1f5f9; color:var(--texto-mutated); font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:bold; text-transform:uppercase;">${inc.categoria_tag}</span>
+                            ${badgeEstado}
                         </div>
                         <p style="color:var(--texto-mutated); font-size:0.85rem; margin-top:6px;">${inc.ubicacion_texto}</p>
                     </div>
@@ -277,11 +319,20 @@ async function renderPatrullasEnSector() {
 
     contenedor.innerHTML = cachePatrullasGlobal.map(p => {
         let isDisp = p.estado_vehiculo === 'disponible';
-        let bgTag = isDisp ? '#e2f5ec' : '#e0f2fe';
-        let colTag = isDisp ? '#10b981' : '#0ea5e9';
+        let bgTag = isDisp ? '#e2f5ec' : '#fee2e2';
+        let colTag = isDisp ? '#10b981' : '#ef4444';
+        let cardBgStyle = isDisp ? 'background: #fff;' : 'background: #f8fafc; opacity: 0.8;';
+
+        const btnDespacharHtml = isDisp 
+            ? `<button onclick="window.abrirModalDespacho('${p.id}')" class="btn-submit" style="background: #004d35; font-size: 0.85rem; padding: 8px; flex-grow: 1; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;">
+                   🌐 Despachar
+               </button>`
+            : `<button disabled class="btn-submit" style="background: #94a3b8; font-size: 0.85rem; padding: 8px; flex-grow: 1; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: not-allowed; border: none; color: #fff;">
+                   🔒 En Procedimiento
+               </button>`;
 
         return `
-            <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #fff; margin-bottom: 5px;">
+            <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 10px; ${cardBgStyle} margin-bottom: 5px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 1.1rem; font-weight: 800; color: var(--texto-oscuro);">${p.id}</span>
                     <span style="background: ${bgTag}; color: ${colTag}; font-size: 0.75rem; font-weight: bold; padding: 3px 8px; border-radius: 4px; text-transform:uppercase;">${p.estado_vehiculo}</span>
@@ -293,9 +344,7 @@ async function renderPatrullasEnSector() {
                     <p><strong>Distancia al objetivo:</strong> ${p.distancia_objetivo}</p>
                 </div>
                 <div style="display: flex; gap: 8px; margin-top: 5px;">
-                    <button onclick="window.abrirModalDespacho('${p.id}')" class="btn-submit" style="background: #004d35; font-size: 0.85rem; padding: 8px; flex-grow: 1; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                        🌐 Despachar
-                    </button>
+                    ${btnDespacharHtml}
                     <button class="btn-submit" style="background: #f1f5f9; color: var(--texto-oscuro); border: 1px solid #cbd5e1; width: 38px; padding: 0; display: flex; align-items: center; justify-content: center;">📞</button>
                 </div>
             </div>
@@ -436,11 +485,61 @@ async function renderDetailIndividualIncidente(idIncidente) {
     `;
 }
 
-window.cambiarEstadoIncidenteDirecto = function(id, nuevoEstado) {
-    supabaseClient.from('alertas_sos').update({ estado: nuevoEstado }).eq('id', id).then(() => {
+window.cambiarEstadoIncidenteDirecto = async function(id, nuevoEstado) {
+    try {
+        let patrullaAsignada = null;
+
+        // Intentar leer la patrulla asignada (si la columna no existe, no crasheamos)
+        try {
+            const { data: alerta } = await supabaseClient
+                .from('alertas_sos')
+                .select('patrulla_asignada')
+                .eq('id', id)
+                .single();
+            if (alerta) {
+                patrullaAsignada = alerta.patrulla_asignada;
+            }
+        } catch (colErr) {
+            console.warn("⚠️ No se pudo leer patrulla_asignada. Probablemente la columna no existe.", colErr);
+        }
+
+        // 2. Cerrar el incidente en Supabase
+        const { error: err1 } = await supabaseClient.from('alertas_sos').update({ estado: nuevoEstado }).eq('id', id);
+        if (err1) {
+            alert("Error en Supabase al cerrar incidente: " + err1.message);
+            return;
+        }
+
+        // 3. Liberar patrulla(s)
+        if (patrullaAsignada) {
+            const listaPatrullas = patrullaAsignada.split(',').map(s => s.trim());
+            for (const pat of listaPatrullas) {
+                if (!pat) continue;
+                const { error: err2 } = await supabaseClient
+                    .from('patrullas_cenco')
+                    .update({ estado_vehiculo: 'disponible' })
+                    .eq('id', pat);
+                if (err2) {
+                    console.warn(`Error al liberar patrulla específica ${pat}:`, err2.message);
+                }
+            }
+        } else {
+            // Respaldar liberando cualquier patrulla ocupada en el sistema para la demo
+            const { error: err3 } = await supabaseClient
+                .from('patrullas_cenco')
+                .update({ estado_vehiculo: 'disponible' })
+                .eq('estado_vehiculo', 'en procedimiento');
+            if (err3) {
+                console.warn("Error al liberar patrullas:", err3.message);
+            }
+        }
+
         alert(`🚨 Procedimiento cerrado de forma conforme.`);
         navegarA('panel');
-    });
+    } catch (err) {
+        console.error("Error al cerrar procedimiento:", err);
+        alert("Error al intentar resolver la emergencia.");
+    }
 };
 
 window.abrirModalDespacho = async function(idPatrulla) {
@@ -453,23 +552,73 @@ window.abrirModalDespacho = async function(idPatrulla) {
     await cargarIncidentesDesdeSupabase();
     const pendientes = cacheIncidentesGlobal.filter(i => i.estado !== 'RESUELTO');
 
-    cuerpoModal.innerHTML = pendientes.map(i => `
-        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; display:flex; flex-direction:column; gap:10px; margin-bottom:5px;">
-            <div style="display:flex; justify-content:space-between;"><strong>${i.id.substring(0,6).toUpperCase()}</strong> <span>● ${i.estado}</span></div>
-            <p style="font-size:0.85rem; margin:0;"><b>Reporte de Urgencia</b> - ${i.ubicacion_texto}</p>
-            <button onclick="window.asignarPatrullaADenuncia('${i.id}')" class="btn-submit" style="background:#004d35; padding:8px; font-size:0.85rem; width:100%;">Asignar a esta denuncia</button>
-        </div>
-    `).join('');
+    cuerpoModal.innerHTML = pendientes.map(i => {
+        const yaDerivado = i.estado === 'EN ATENCION';
+        const badgeDerivada = yaDerivado 
+            ? `<span style="background:#fee2e2; color:#ef4444; font-size:0.65rem; font-weight:bold; padding:2px 6px; border-radius:4px; margin-left:8px;">⚠️ DERIVADO</span>` 
+            : '';
+        const btnTexto = yaDerivado ? 'Asignar patrulla adicional' : 'Asignar a esta denuncia';
+
+        return `
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; display:flex; flex-direction:column; gap:10px; margin-bottom:5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong>${i.id.substring(0,6).toUpperCase()}</strong> 
+                    <span style="font-size:0.8rem; display:flex; align-items:center;">● ${i.estado} ${badgeDerivada}</span>
+                </div>
+                <p style="font-size:0.85rem; margin:0;"><b>Reporte de Urgencia</b> - ${i.ubicacion_texto}</p>
+                <button onclick="window.asignarPatrullaADenuncia('${i.id}')" class="btn-submit" style="background:#004d35; padding:8px; font-size:0.85rem; width:100%;">${btnTexto}</button>
+            </div>
+        `;
+    }).join('');
 };
 
 window.cerrarModalDespacho = function() { document.getElementById('modal-despacho-patrulla').style.display = "none"; };
 
 window.asignarPatrullaADenuncia = async function(idDenuncia) {
-    await supabaseClient.from('alertas_sos').update({ estado: 'EN ATENCION' }).eq('id', idDenuncia);
-    await supabaseClient.from('patrullas_cenco').update({ estado_vehiculo: 'en procedimiento' }).eq('id', patrullaSeleccionadaParaDespacho);
-    alert(`Unidad ${patrullaSeleccionadaParaDespacho} asignada.`);
-    window.cerrarModalDespacho();
-    navegarA('panel');
+    try {
+        // 1. Primero actualizamos el estado (siempre tiene éxito)
+        const { error: err1 } = await supabaseClient.from('alertas_sos').update({ estado: 'EN ATENCION' }).eq('id', idDenuncia);
+        if (err1) {
+            alert("Error en Supabase al actualizar estado: " + err1.message);
+            return;
+        }
+
+        // Obtener patrullas ya asignadas para concatenar
+        const alertaActual = cacheIncidentesGlobal.find(i => i.id === idDenuncia);
+        let nuevasPatrullas = patrullaSeleccionadaParaDespacho;
+        if (alertaActual && alertaActual.patrulla_asignada) {
+            const listaExistente = alertaActual.patrulla_asignada.split(',').map(s => s.trim());
+            if (!listaExistente.includes(patrullaSeleccionadaParaDespacho)) {
+                listaExistente.push(patrullaSeleccionadaParaDespacho);
+                nuevasPatrullas = listaExistente.join(', ');
+            } else {
+                nuevasPatrullas = alertaActual.patrulla_asignada;
+            }
+        }
+
+        // 2. Intentamos guardar la patrulla asignada (si la columna no existe, falla de forma controlada)
+        try {
+            await supabaseClient.from('alertas_sos').update({ 
+                patrulla_asignada: nuevasPatrullas
+            }).eq('id', idDenuncia);
+        } catch (colErr) {
+            console.warn("⚠️ No se pudo guardar patrulla_asignada en alertas_sos.", colErr);
+        }
+
+        // 3. Cambiamos el estado del carro policial a en procedimiento
+        const { error: err3 } = await supabaseClient.from('patrullas_cenco').update({ estado_vehiculo: 'en procedimiento' }).eq('id', patrullaSeleccionadaParaDespacho);
+        if (err3) {
+            alert("Error en Supabase al asignar patrulla: " + err3.message);
+            return;
+        }
+
+        alert(`Unidad ${patrullaSeleccionadaParaDespacho} asignada.`);
+        window.cerrarModalDespacho();
+        navegarA('panel');
+    } catch (err) {
+        console.error("Error al asignar patrulla:", err);
+        alert("Ocurrió un error al despachar la patrulla.");
+    }
 };
 
 window.filtrarAlertasTurno = function() {
@@ -483,29 +632,48 @@ document.addEventListener('click', () => { const d = document.getElementById('dr
 
 // --- 🌐 ENLACE EN TIEMPO REAL (REALTIME LISTENERS CORREGIDO) ---
 function escucharAlertasRealtime() {
-    console.log("🟢 Central CENCO escuchando la tabla 'alertas_sos' en tiempo real...");
+    console.log("🟢 Central CENCO escuchando cambios en tiempo real...");
     
+    // Escuchador de incidentes/alertas
     supabaseClient
         .channel('cambios-incidentes')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'alertas_sos' }, async (payload) => {
             console.log("🚨 CAMBIO EN ALERTA SOS:", payload);
-            
-            // Recargar caché local
             await cargarIncidentesDesdeSupabase();
             
-            // Si el panel de control está activo, redibujar contadores e incidentes
             const linkPanel = document.getElementById('menu-panel');
             if (linkPanel && linkPanel.classList.contains('active')) {
                 renderPanelControl();
             }
             
-            // Si el listado de denuncias está activo, redibujar tabla
             const linkDenuncias = document.getElementById('menu-denuncias');
             if (linkDenuncias && linkDenuncias.classList.contains('active')) {
                 renderDenunciasRecibidas();
             }
 
-            // Si el mapa de patrullas está activo, redibujar markers
+            const linkPatrullas = document.getElementById('menu-patrullas');
+            if (linkPatrullas && linkPatrullas.classList.contains('active')) {
+                await renderPatrullasEnSector();
+                inicializarMapaOperativoConcepcion();
+            }
+        })
+        .subscribe();
+
+    // Escuchador de patrullas
+    supabaseClient
+        .channel('cambios-patrullas')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'patrullas_cenco' }, async (payload) => {
+            console.log("🚔 CAMBIO EN ESTADO DE PATRULLA:", payload);
+            await cargarPatrullasDesdeSupabase();
+
+            const linkPanel = document.getElementById('menu-panel');
+            if (linkPanel && linkPanel.classList.contains('active')) {
+                const patrullasDisponibles = cachePatrullasGlobal.filter(p => p.estado_vehiculo === 'disponible').length || 0;
+                if (document.getElementById('contador-patrulla-vivo')) {
+                    document.getElementById('contador-patrulla-vivo').innerText = patrullasDisponibles;
+                }
+            }
+
             const linkPatrullas = document.getElementById('menu-patrullas');
             if (linkPatrullas && linkPatrullas.classList.contains('active')) {
                 await renderPatrullasEnSector();
@@ -567,5 +735,43 @@ document.getElementById('menu-denuncias').onclick = (e) => { e.preventDefault();
 document.getElementById('menu-videos').onclick = (e) => { e.preventDefault(); navegarA('videos'); };
 document.getElementById('menu-patrullas').onclick = (e) => { e.preventDefault(); navegarA('patrullas'); };
 document.getElementById('btn-logout').onclick = (e) => { e.preventDefault(); sessionActiva = false; navegarA('login'); };
+
+/**
+ * 👤 Actualizar datos del operador de forma dinámica en la barra lateral
+ */
+window.actualizarSidebarOperadorDinamico = async function() {
+    try {
+        const { data: op, error } = await supabaseClient
+            .from('perfiles_operadores')
+            .select('*')
+            .eq('id', ID_OPERADOR_ACTIVO)
+            .single();
+
+        if (error || !op) {
+            console.warn("⚠️ No se pudo cargar el operador dinámico para el sidebar:", error?.message);
+            return;
+        }
+
+        // Obtener iniciales (ej: "JP" de Juan Pérez)
+        const partes = op.nombre_completo.split(' ');
+        const iniciales = (partes[2] && partes[3]) 
+            ? `${partes[2].charAt(0)}${partes[3].charAt(0)}` 
+            : op.nombre_completo.substring(0, 2).toUpperCase();
+
+        if (document.getElementById('sidebar-operador-avatar')) {
+            document.getElementById('sidebar-operador-avatar').innerText = iniciales;
+        }
+        if (document.getElementById('sidebar-operador-nombre')) {
+            // Mostrar apellido (ej: "Sargento 2º Pérez")
+            const apellido = partes[2] || op.nombre_completo;
+            document.getElementById('sidebar-operador-nombre').innerText = `${op.grado} ${apellido}`;
+        }
+        if (document.getElementById('sidebar-operador-rol')) {
+            document.getElementById('sidebar-operador-rol').innerText = "Operador Central ⚙️";
+        }
+    } catch (err) {
+        console.error("❌ Falla en la barra lateral del operador:", err);
+    }
+};
 
 navegarA('login');
