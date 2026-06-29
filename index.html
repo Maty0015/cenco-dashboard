@@ -55,6 +55,7 @@
                 <a href="#" id="menu-denuncias"></a>
                 <a href="#" id="menu-videos"></a>
                 <a href="#" id="menu-patrullas"></a>
+                <a href="#" id="menu-perfiles"></a>
             </nav>
 
             <div class="sidebar-footer">
@@ -158,42 +159,83 @@
 
                 <section id="vista-gestion-videollamadas" style="display: none;">
                     <h1 style="font-size: 1.8rem; font-weight: bold; margin-bottom: 0.5rem; color: var(--texto-oscuro);">Módulo de Asistencia Inclusiva (LSCh)</h1>
-                    <p style="color: var(--texto-mutated); margin-bottom: 1.5rem; font-size: 0.95rem;">Turno activo de atención mediante Lengua de Señas Chilena en tiempo real.</p>
+                    <p style="color: var(--texto-mutated); margin-bottom: 1.5rem; font-size: 0.95rem;">Enlace trilateral en tiempo real para atención de personas sordas (Ley N° 21.719).</p>
                     
                     <div style="display: grid; grid-template-columns: 2.2fr 1fr; gap: 20px; align-items: start; width:100%;">
-                        <div style="background: #1a1f36; border-radius: 12px; overflow: hidden; position: relative; height: 65vh; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
-                            <div style="background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); border-radius: 8px; padding: 10px 16px; color: white; width: fit-content; border: 1px solid rgba(255,255,255,0.1);">
-                                <h4 style="font-size: 1rem; font-weight: 700;">María González</h4>
-                                <p style="font-size: 0.75rem; color: #10b981; display: flex; align-items: center; gap: 5px; margin-top: 2px;">
-                                    <span style="width: 6px; height: 6px; background: #10b981; border-radius: 50%;"></span> Conexión estable
-                                </p>
+                        <!-- Panel de Videollamada Trilateral -->
+                        <div style="background: #0f172a; border-radius: 12px; overflow: hidden; position: relative; height: 68vh; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); box-sizing: border-box;">
+                            
+                            <!-- Video Feeds Grid -->
+                            <div id="video-conference-grid" style="display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1.1fr 0.9fr; gap: 10px; height: 82%; width: 100%;">
+                                <!-- Ciudadano Sordo -->
+                                <div style="background: #1e293b; border-radius: 8px; border: 1.5px solid #334155; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end;">
+                                    <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwzfHx3b21hbiUyMHNpZ24lMjBsYW5ndWFnZXxlbnwxfHx8fDE3Nzg2MjM3OTR8MA&ixlib=rb-4.1.0&q=80&w=600" id="video-ciudadano" style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.45); transition: filter 0.5s;" alt="Ciudadano">
+                                    <div style="position: absolute; bottom: 8px; left: 8px; background: rgba(0, 0, 0, 0.65); color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.1);">
+                                        👤 Ciudadano: María González
+                                    </div>
+                                    <div id="sim-indicador-pfp-1" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:3rem; color:rgba(255,255,255,0.3);">🔇</div>
+                                </div>
+
+                                <!-- Intérprete LSCh -->
+                                <div style="background: #1e293b; border-radius: 8px; border: 1.5px solid #334155; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end;">
+                                    <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpbnRlcnByZXRlciUyMHNpZ24lMjBsYW5ndWFnZXxlbnwxfHx8fDE3Nzg2MjM3OTR8MA&ixlib=rb-4.1.0&q=80&w=600" id="video-interprete" style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.45); transition: filter 0.5s;" alt="Intérprete">
+                                    <div style="position: absolute; bottom: 8px; left: 8px; background: rgba(0, 0, 0, 0.65); color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.1);">
+                                        🤟 Intérprete LSCh: Subt. Carla Jara
+                                    </div>
+                                    <div id="sim-indicador-pfp-2" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:3rem; color:rgba(255,255,255,0.3);">🔇</div>
+                                </div>
+
+                                <!-- Operador CENCO -->
+                                <div style="background: #1e293b; border-radius: 8px; border: 1.5px solid #334155; grid-column: span 2; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end;">
+                                    <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw2fHxwb2xpY2UlMjBvZmZpY2VyJTIwaGVhZHNldHxlbnwxfHx8fDE3Nzg2MjM3OTR8MA&ixlib=rb-4.1.0&q=80&w=600" id="video-operador" style="width: 100%; height: 100%; object-fit: cover; filter: brightness(0.45); transition: filter 0.5s;" alt="Operador">
+                                    <div style="position: absolute; bottom: 8px; left: 8px; background: rgba(0, 0, 0, 0.65); color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.1);">
+                                        👮 Operador Central: Sargento Pérez
+                                    </div>
+                                    <div id="sim-indicador-pfp-3" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:3rem; color:rgba(255,255,255,0.3);">🔇</div>
+                                    
+                                    <!-- Subtítulos Dinámicos -->
+                                    <div id="subtitulos-conferencia" style="position: absolute; bottom: 35px; left: 10%; right: 10%; text-align: center; background: rgba(15, 23, 42, 0.9); border: 2px solid #10b981; border-radius: 8px; padding: 10px 15px; color: #10b981; font-weight: 700; font-size: 0.95rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); display: none; line-height: 1.4;">
+                                        [Enlace Trilateral Conectado - Esperando Audio/Señas...]
+                                    </div>
+                                </div>
                             </div>
-                            <div style="text-align: center; color: rgba(255,255,255,0.7); flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px;">
-                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.5;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                                <p style="font-size: 1rem; font-weight: 500;">Conectando video del usuario...</p>
-                            </div>
-                            <div style="position: absolute; right: 20px; bottom: 90px; width: 140px; height: 190px; background: #2e375a; border-radius: 8px; border: 2px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.5); font-size: 0.8rem; font-weight: 500; box-shadow: 0 10px 20px rgba(0,0,0,0.2);">Tu cámara</div>
-                            <div style="display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%; background: rgba(15, 23, 42, 0.4); padding: 12px; border-radius: 12px; backdrop-filter: blur(4px);">
-                                <button style="width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.15); border: none; color: white; display: flex; align-items: center; justify-content: center;"><svg width="20" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
-                                <button style="width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.15); border: none; color: white; display: flex; align-items: center; justify-content: center;"><svg width="20" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg></button>
-                                <button onclick="navegarA('panel')" style="width: 44px; height: 44px; border-radius: 50%; background: #ff4757; border: none; color: white; display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform: rotate(135deg);"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.79 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+
+                            <!-- Botones de Control de la Conferencia -->
+                            <div style="display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%; background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 12px; box-sizing: border-box; flex-shrink: 0;">
+                                <button onclick="window.toggleVideoCallSimulation()" id="btn-iniciar-sim-videollamada" style="background: #10b981; color: white; border: none; padding: 10px 20px; font-size: 0.85rem; font-weight: bold; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: inherit;">
+                                    📞 Iniciar Simulación Trilateral
+                                </button>
+                                <button style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.15); border: none; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+                                <button style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.15); border: none; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg></button>
+                                <button onclick="window.finalizarSimulacionVideoCall()" style="width: 40px; height: 40px; border-radius: 50%; background: #ff4757; border: none; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform: rotate(135deg);"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.79 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
                             </div>
                         </div>
 
-                        <div style="display: flex; flex-direction: column; gap: 15px; height: 65vh; overflow-y: auto; padding-right: 2px;">
+                        <!-- Sidebar de la Videollamada (Cola y Chat) -->
+                        <div style="display: flex; flex-direction: column; gap: 15px; height: 68vh; overflow-y: auto;">
                             <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 18px;">
                                 <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: var(--texto-oscuro);">Asistencia Inclusiva</h3>
-                                <p style="font-size: 0.85rem; color: var(--texto-mutated); line-height: 1.4; margin-bottom: 12px;">Usted está operando como intérprete oficial de Lengua de Señas Chilena (LSCh).</p>
-                                <div style="background: #f0fdf4; border-radius: 6px; padding: 10px 12px; border-left: 3px solid #10b981; font-size: 0.85rem; color: #15803d;"><strong>Protocolo:</strong> Mantenga el rostro visible y las manos en el encuadre.</div>
+                                <p style="font-size: 0.85rem; color: var(--texto-mutated); line-height: 1.4; margin-bottom: 12px;">Usted está enlazado en el canal trilateral oficial de Lengua de Señas Chilena (LSCh).</p>
+                                <div style="background: #f0fdf4; border-radius: 6px; padding: 10px 12px; border-left: 3px solid #10b981; font-size: 0.85rem; color: #15803d;"><strong>Ley N° 21.719:</strong> Prioridad obligatoria de traducción simultánea.</div>
                             </div>
+                            
                             <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 18px;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;"><h3 style="font-size: 1rem; font-weight: 700; color: var(--texto-oscuro);">Cola de Espera</h3><span style="background: #ffedd5; color: #f97316; font-size: 0.75rem; font-weight: bold; padding: 2px 6px; border-radius: 10px;">1</span></div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px 12px; border-radius: 6px; border: 1px solid #e2e8f0;"><span style="font-size: 0.9rem; font-weight: 600; color: var(--texto-oscuro);">Juan Pérez</span><span style="font-size: 0.85rem; font-weight: 700; color: #ff4757; font-family: monospace;">2:30</span></div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+                                    <h3 style="font-size: 1rem; font-weight: 700; color: var(--texto-oscuro);">Cola de Espera</h3>
+                                    <span style="background: #ffedd5; color: #f97316; font-size: 0.75rem; font-weight: bold; padding: 2px 6px; border-radius: 10px;" id="video-cola-badge">1</span>
+                                </div>
+                                <div id="video-cola-lista" style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                    <span style="font-size: 0.9rem; font-weight: 600; color: var(--texto-oscuro);" id="video-ciudadano-name-status">María González (SOS)</span>
+                                    <span style="font-size: 0.85rem; font-weight: 700; color: #ff9f43; font-family: monospace;" id="video-live-status-label">EN ESPERA</span>
+                                </div>
                             </div>
+
                             <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 18px; display: flex; flex-direction: column; gap: 10px; flex-grow: 1;">
-                                <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--texto-oscuro);">Chat de Texto / Notas</h3>
-                                <div style="flex-grow: 1; background: #f8fafc; border-radius: 6px; padding: 10px; min-height: 80px; color: var(--texto-mutated); font-size: 0.85rem; font-style: italic;">Los mensajes aparecerán aquí...</div>
-                                <input type="text" placeholder="Escribir mensaje..." style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.9rem; background:#f1f5f9;">
+                                <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--texto-oscuro);">Transcripción del Historial</h3>
+                                <div style="flex-grow: 1; background: #f8fafc; border-radius: 6px; padding: 10px; min-height: 120px; color: var(--texto-mutated); font-size: 0.85rem; overflow-y:auto; box-sizing:border-box;" id="video-chat-transcripcion">
+                                    <p style="font-style: italic; margin:0;" id="video-chat-placeholder">Los diálogos transcritos aparecerán aquí durante la simulación...</p>
+                                </div>
+                                <input type="text" id="video-chat-input" placeholder="Enviar mensaje de texto..." style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.9rem; background:#f1f5f9; box-sizing:border-box;">
                             </div>
                         </div>
                     </div>
@@ -226,6 +268,82 @@
 
                 <section id="vista-detalle-incidente" style="display: none;">
                     <div id="contenedor-modulo-detalle-vivo"></div>
+                </section>
+
+                <section id="vista-perfiles" style="display: none;">
+                    <h1 style="font-size: 1.8rem; font-weight: bold; margin-bottom: 0.5rem; color: var(--texto-oscuro);">Gestión de Perfiles y Cuadrantes</h1>
+                    <p style="color: var(--texto-mutated); margin-bottom: 1.5rem; font-size: 0.95rem;">Administración de operadores, intérpretes de señas y asignación de cuadrantes sectoriales.</p>
+
+                    <div style="display: grid; grid-template-columns: 1.2fr 2fr; gap: 20px; align-items: start; width:100%;">
+                        <!-- Formulario de Registro / Edición de Operador -->
+                        <div style="background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                            <h3 style="font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; color: #004d35; margin: 0;" id="crud-form-titulo">🛡️ Registrar Nuevo Funcionario</h3>
+                            <form onsubmit="window.procesarCrudOperador(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                                <input type="hidden" id="crud-op-id" value="">
+                                <div class="form-group" style="margin:0;">
+                                    <label style="font-size:0.85rem; font-weight:600; margin-bottom:4px; display:block;">Nombre Completo</label>
+                                    <input type="text" id="crud-op-nombre" required placeholder="Ej: Sargento Juan Perez" style="padding:10px; width:100%; border:1px solid #cbd5e1; border-radius:6px; background:#f1f5f9; box-sizing:border-box;">
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label style="font-size:0.85rem; font-weight:600; margin-bottom:4px; display:block;">RUT</label>
+                                    <input type="text" id="crud-op-rut" required placeholder="Ej: 15.662.981-2" style="padding:10px; width:100%; border:1px solid #cbd5e1; border-radius:6px; background:#f1f5f9; box-sizing:border-box;">
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label style="font-size:0.85rem; font-weight:600; margin-bottom:4px; display:block;">Rango / Grado</label>
+                                    <input type="text" id="crud-op-grado" required placeholder="Ej: Sargento 2º" style="padding:10px; width:100%; border:1px solid #cbd5e1; border-radius:6px; background:#f1f5f9; box-sizing:border-box;">
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label style="font-size:0.85rem; font-weight:600; margin-bottom:4px; display:block;">Correo</label>
+                                    <input type="email" id="crud-op-correo" required placeholder="Ej: juan.perez@carabineros.cl" style="padding:10px; width:100%; border:1px solid #cbd5e1; border-radius:6px; background:#f1f5f9; box-sizing:border-box;">
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label style="font-size:0.85rem; font-weight:600; margin-bottom:4px; display:block;">Número de Placa</label>
+                                    <input type="text" id="crud-op-placa" required placeholder="Ej: CAR-9281" style="padding:10px; width:100%; border:1px solid #cbd5e1; border-radius:6px; background:#f1f5f9; box-sizing:border-box;">
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label style="font-size:0.85rem; font-weight:600; margin-bottom:4px; display:block;">Rol de Turno</label>
+                                    <select id="crud-op-rol" style="padding:10px; width:100%; border:1px solid #cbd5e1; border-radius:6px; background:#f1f5f9; font-size:0.85rem; box-sizing:border-box;">
+                                        <option value="OPERADOR">Operador Radial</option>
+                                        <option value="INTERPRETE">Intérprete LSCh</option>
+                                        <option value="SUPERVISOR">Supervisor de Guardia</option>
+                                    </select>
+                                </div>
+                                <div style="display:flex; gap:10px; margin-top:8px;">
+                                    <button type="submit" class="btn-submit" style="background:#004d35; padding:12px; font-size:0.9rem; font-weight:700; border-radius:6px; flex-grow:1;" id="btn-crud-op-submit">💾 Guardar Registro</button>
+                                    <button type="button" onclick="window.cancelarEdicionOperador()" class="btn-submit" style="background:#cbd5e1; color:#334155; padding:12px; font-size:0.9rem; font-weight:700; border-radius:6px; display:none;" id="btn-crud-op-cancel">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Listados: Operadores y Cuadrantes -->
+                        <div style="display:flex; flex-direction:column; gap:20px; width:100%;">
+                            <!-- Tabla de Operadores -->
+                            <div style="background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                                <h3 style="font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px; color: var(--texto-oscuro);">📋 Listado de Operadores de Guardia</h3>
+                                <div style="overflow-x:auto;">
+                                    <table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:left;">
+                                        <thead>
+                                            <tr style="border-bottom:2px solid #e2e8f0; color:var(--texto-mutated); font-weight:bold;">
+                                                <th style="padding:10px 5px;">Funcionario</th>
+                                                <th style="padding:10px 5px;">Placa</th>
+                                                <th style="padding:10px 5px;">Rol</th>
+                                                <th style="padding:10px 5px; text-align:center; width: 120px;">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="crud-tabla-operadores-body">
+                                            <tr><td colspan="4" style="padding:20px; text-align:center; color:var(--texto-mutado);">Cargando personal...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Listado y Asignación de Cuadrantes -->
+                            <div style="background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                                <h3 style="font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px; color: var(--texto-oscuro);">🗺️ Plan Cuadrante (Comisaría Concepción)</h3>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;" id="crud-cuadrantes-lista"></div>
+                            </div>
+                        </div>
+                    </div>
                 </section>
 
                 <section id="vista-perfil-operador" style="display: none;">

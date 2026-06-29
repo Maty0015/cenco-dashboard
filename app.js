@@ -49,6 +49,7 @@ window.procesarLoginCenco = function(e) {
         document.getElementById('menu-denuncias').innerHTML = `<div style="display:flex; align-items:center;"><svg width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Denuncias Recibidas</div> <span class="badge">3</span>`;
         document.getElementById('menu-videos').innerHTML = `<div style="display:flex; align-items:center;"><svg width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg> Gestión Videollamadas</div> <span class="badge">1</span>`;
         document.getElementById('menu-patrullas').innerHTML = `<svg width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1 .4-1 1v7c0 .6.4 1 1 1h1"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg> Derivación Patrullas`;
+        document.getElementById('menu-perfiles').innerHTML = `<svg width="18" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Gestión Perfiles`;
 
         navegarA('panel');
         escucharAlertasRealtime(); 
@@ -467,22 +468,58 @@ async function renderDetailIndividualIncidente(idIncidente) {
             </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:20px; max-width:1000px; margin:0 auto;">
-            <div style="background:#fff; padding:25px; border-radius:8px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:flex-start;">
-                <div>
-                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
-                        <h2 style="font-size:1.8rem; font-weight:800; color:var(--texto-oscuro);">${inc.id.substring(0,6).toUpperCase()}</h2>
-                        <span style="background:${badgeColor}15; color:${badgeColor}; font-size:0.75rem; font-weight:bold; padding:4px 10px; border-radius:4px; text-transform:uppercase;">● ${inc.estado}</span>
+        <div style="display:grid; grid-template-columns: 1.3fr 1fr; gap:20px; max-width:1100px; margin:0 auto; align-items: stretch;">
+            <!-- LEFT COLUMN: INCIDENT INFO & MAP -->
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <div style="background:#fff; padding:25px; border-radius:8px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:flex-start; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div>
+                        <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                            <h2 style="font-size:1.8rem; font-weight:800; color:var(--texto-oscuro);">${inc.id.substring(0,6).toUpperCase()}</h2>
+                            <span style="background:${badgeColor}15; color:${badgeColor}; font-size:0.75rem; font-weight:bold; padding:4px 10px; border-radius:4px; text-transform:uppercase;">● ${inc.estado}</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:var(--texto-mutated); font-size:1.05rem;">⚠️ ${labelTipo}: ${inc.nombre_ciudadano} (RUT: ${inc.rut_ciudadano})</div>
                     </div>
-                    <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:var(--texto-mutated); font-size:1.05rem;">⚠️ ${labelTipo}: ${inc.nombre_ciudadano} (RUT: ${inc.rut_ciudadano})</div>
+                    <div style="text-align:right; color:var(--texto-mutated); font-size:0.9rem;">
+                        <div style="display:flex; align-items:center; gap:6px; font-weight:600; justify-content:flex-end;">🕒 ${horaExpediente}</div>
+                        <p style="margin-top:6px; font-weight:500;">Ubicación: ${inc.ubicacion_texto}</p>
+                    </div>
                 </div>
-                <div style="text-align:right; color:var(--texto-mutated); font-size:0.9rem;">
-                    <div style="display:flex; align-items:center; gap:6px; font-weight:600;">🕒 ${horaExpediente}</div>
-                    <p style="margin-top:6px; font-weight:500;">Ubicación: ${inc.ubicacion_texto}</p>
+
+                <!-- SIMULACIÓN DE MAPA -->
+                <div style="background:#fff; border-radius:8px; border:1px solid #e2e8f0; padding:20px; height: 350px; display:flex; flex-direction:column; justify-content:center; align-items:center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <h4 style="margin:0 0 12px 0; color:var(--texto-oscuro); font-weight:700; width:100%; text-align:left;">📍 Georreferenciación SOS (Mapa Satelital)</h4>
+                    <div style="width:100%; height:100%; border-radius:6px; background:#e2e8f0; display:flex; justify-content:center; align-items:center; font-style:italic; font-weight:600; color:var(--texto-mutated); border:1px dashed #cbd5e1;">
+                        [Simulación de Mapa en Vivo - Latitud: ${inc.latitud.toFixed(4)}, Longitud: ${inc.longitud.toFixed(4)}]
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: REALTIME CHAT CON CIUDADANO SORDO -->
+            <div style="background:#fff; border-radius:8px; border:1px solid #e2e8f0; display:flex; flex-direction:column; height: 490px; overflow:hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <!-- Chat Header -->
+                <div style="background:var(--verde-carabinero); color:white; padding:15px; font-weight:bold; font-size:0.9rem; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+                    <span>💬 Chat Radial con Ciudadano</span>
+                    <span style="font-size:0.7rem; background:rgba(255,255,255,0.2); padding:3px 8px; border-radius:4px; font-weight:700;">ACTIVO</span>
+                </div>
+                
+                <!-- Chat History -->
+                <div id="dashboard-chat-historial" style="flex-grow:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:10px; background:#f8fafc;">
+                    <p style="font-style:italic; color:#94a3b8; text-align:center; font-size:0.8rem; margin-top:50px; width:100%;">Cargando mensajes del chat...</p>
+                </div>
+                
+                <!-- Chat Input Footer -->
+                <div style="padding:15px; border-top:1px solid #e2e8f0; display:flex; gap:10px; background:white; flex-shrink:0; align-items:center;">
+                    <input type="text" id="dashboard-chat-input" placeholder="Escribir respuesta al ciudadano sordo..." style="flex-grow:1; padding:10px; border-radius:6px; border:1px solid #cbd5e1; font-size:0.85rem; outline:none;" onkeypress="if(event.key === 'Enter') window.enviarMensajeDashboard('${inc.id}', '${inc.rut_ciudadano}')">
+                    <button onclick="window.enviarMensajeDashboard('${inc.id}', '${inc.rut_ciudadano}')" style="background:var(--verde-carabinero); color:white; border:none; padding:10px 15px; border-radius:6px; font-weight:bold; font-size:0.85rem; cursor:pointer; outline:none;">Enviar</button>
                 </div>
             </div>
         </div>
     `;
+
+    // Inicializar chat tras inyección
+    setTimeout(() => {
+        window.inicializarChatDashboard(inc.id);
+    }, 100);
 }
 
 window.cambiarEstadoIncidenteDirecto = async function(id, nuevoEstado) {
@@ -541,6 +578,8 @@ window.cambiarEstadoIncidenteDirecto = async function(id, nuevoEstado) {
         alert("Error al intentar resolver la emergencia.");
     }
 };
+
+
 
 window.abrirModalDespacho = async function(idPatrulla) {
     patrullaSeleccionadaParaDespacho = idPatrulla;
@@ -693,6 +732,7 @@ function navegarA(vista, dataParam = null) {
     document.getElementById('vista-derivacion-patrullas').style.display = "none";
     document.getElementById('vista-detalle-incidente').style.display = "none";
     document.getElementById('vista-perfil-operador').style.display = "none";
+    if (document.getElementById('vista-perfiles')) document.getElementById('vista-perfiles').style.display = "none";
 
     switch (vista) {
         case 'panel':
@@ -715,6 +755,13 @@ function navegarA(vista, dataParam = null) {
             renderPatrullasEnSector();
             setTimeout(() => { window.inicializarMapaOperativoConcepcion(); }, 50);
             break;
+        case 'perfiles':
+            if (document.getElementById('menu-perfiles')) document.getElementById('menu-perfiles').classList.add('active');
+            if (document.getElementById('vista-perfiles')) {
+                document.getElementById('vista-perfiles').style.display = "block";
+                window.renderPerfilesCrud();
+            }
+            break;
         case 'detalle-incidente':
             document.getElementById('vista-detalle-incidente').style.display = "block";
             renderDetailIndividualIncidente(dataParam);
@@ -734,6 +781,9 @@ document.getElementById('menu-panel').onclick = (e) => { e.preventDefault(); nav
 document.getElementById('menu-denuncias').onclick = (e) => { e.preventDefault(); navegarA('denuncias'); };
 document.getElementById('menu-videos').onclick = (e) => { e.preventDefault(); navegarA('videos'); };
 document.getElementById('menu-patrullas').onclick = (e) => { e.preventDefault(); navegarA('patrullas'); };
+if (document.getElementById('menu-perfiles')) {
+    document.getElementById('menu-perfiles').onclick = (e) => { e.preventDefault(); navegarA('perfiles'); };
+}
 document.getElementById('btn-logout').onclick = (e) => { e.preventDefault(); sessionActiva = false; navegarA('login'); };
 
 /**
@@ -771,6 +821,493 @@ window.actualizarSidebarOperadorDinamico = async function() {
         }
     } catch (err) {
         console.error("❌ Falla en la barra lateral del operador:", err);
+    }
+};
+
+/**
+ * 👥 MÓDULO CRUD DE PERFILES Y CUADRANTES (HU-02)
+ */
+let cacheOperadoresCrud = [];
+
+// Cargar y Renderizar CRUD de Operadores y Cuadrantes
+window.renderPerfilesCrud = async function() {
+    try {
+        // 1. Cargar operadores
+        const { data: operadores, error: errOp } = await supabaseClient
+            .from('perfiles_operadores')
+            .select('*')
+            .order('nombre_completo', { ascending: true });
+
+        if (errOp) {
+            console.error("Error al cargar operadores:", errOp);
+            return;
+        }
+
+        cacheOperadoresCrud = operadores || [];
+        const tbody = document.getElementById('crud-tabla-operadores-body');
+        
+        if (cacheOperadoresCrud.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="padding:20px; text-align:center; color:var(--texto-mutado);">No hay operadores registrados.</td></tr>`;
+        } else {
+            tbody.innerHTML = cacheOperadoresCrud.map(op => {
+                let badgeRolColor = '#3b82f6'; // Azul para Operador
+                let labelRol = 'Operador Radial';
+                
+                // Determinamos el rol según el email o la placa
+                if (op.identificacion_placa.includes('INT') || op.nombre_completo.toLowerCase().includes('interprete')) {
+                    badgeRolColor = '#10b981'; // Verde para Intérprete
+                    labelRol = 'Intérprete LSCh';
+                } else if (op.grado.toLowerCase().includes('teniente') || op.grado.toLowerCase().includes('capitán')) {
+                    badgeRolColor = '#f59e0b'; // Naranja para Supervisor
+                    labelRol = 'Supervisor';
+                }
+
+                return `
+                    <tr style="border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:12px 5px;">
+                            <div style="font-weight:700; color:var(--texto-oscuro);">${op.nombre_completo}</div>
+                            <div style="font-size:0.75rem; color:var(--texto-mutated);">${op.grado}</div>
+                        </td>
+                        <td style="padding:12px 5px; font-family:monospace; color:var(--texto-oscuro);">${op.identificacion_placa}</td>
+                        <td style="padding:12px 5px;">
+                            <span style="background:${badgeRolColor}15; color:${badgeRolColor}; font-size:0.65rem; font-weight:bold; padding:2px 6px; border-radius:4px; text-transform:uppercase;">
+                                ${labelRol}
+                            </span>
+                        </td>
+                        <td style="padding:12px 5px; text-align:center; display:flex; gap:6px; justify-content:center;">
+                            <button onclick="window.iniciarEditarOperador('${op.id}')" style="background:#3b82f6; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer;">Editar</button>
+                            <button onclick="window.eliminarOperador('${op.id}')" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer;">Baja</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 2. Cargar cuadrantes
+        // Obtenemos todos los cuadrantes desde las patrullas registradas en Supabase
+        const { data: patrullas, error: errPat } = await supabaseClient
+            .from('patrullas_cenco')
+            .select('cuadrante, tripulacion, id');
+            
+        const cuadrantesContainer = document.getElementById('crud-cuadrantes-lista');
+        if (errPat || !patrullas) {
+            cuadrantesContainer.innerHTML = `<div style="grid-column: span 2; padding:15px; text-align:center; color:var(--texto-mutado);">Error al cargar los cuadrantes.</div>`;
+            return;
+        }
+
+        // Agrupamos patrullas por cuadrante
+        const cuadrantesMap = {};
+        patrullas.forEach(p => {
+            if (!cuadrantesMap[p.cuadrante]) {
+                cuadrantesMap[p.cuadrante] = [];
+            }
+            cuadrantesMap[p.cuadrante].push(p.id);
+        });
+
+        const listaCuadrantes = Object.keys(cuadrantesMap);
+        if (listaCuadrantes.length === 0) {
+            cuadrantesContainer.innerHTML = `<div style="grid-column: span 2; padding:15px; text-align:center; color:var(--texto-mutado);">No hay cuadrantes registrados en el sistema.</div>`;
+        } else {
+            cuadrantesContainer.innerHTML = listaCuadrantes.map(cuadName => {
+                const patrullasCod = cuadrantesMap[cuadName].join(', ');
+                return `
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:12px 15px; display:flex; flex-direction:column; gap:6px;">
+                        <span style="font-weight:700; color:#004d35; font-size:0.9rem;">📍 ${cuadName}</span>
+                        <span style="font-size:0.75rem; color:var(--texto-mutated);">Vehículos asignados: <b>${patrullasCod}</b></span>
+                        <span style="font-size:0.75rem; color:var(--texto-mutated);">Dotación: <b>1ª Comisaría de Concepción</b></span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+    } catch (err) {
+        console.error("Error en renderPerfilesCrud:", err);
+    }
+};
+
+// Crear o Editar Operador en Supabase
+window.procesarCrudOperador = async function(event) {
+    event.preventDefault();
+    const id = document.getElementById('crud-op-id').value;
+    const nombre = document.getElementById('crud-op-nombre').value.trim();
+    const rut = document.getElementById('crud-op-rut').value.trim();
+    const grado = document.getElementById('crud-op-grado').value.trim();
+    const correo = document.getElementById('crud-op-correo').value.trim();
+    const placa = document.getElementById('crud-op-placa').value.trim();
+    const rol = document.getElementById('crud-op-rol').value;
+
+    const payload = {
+        nombre_completo: nombre,
+        grado: grado,
+        identificacion_placa: placa,
+        dotacion_cuartel: '1ª Comisaría de Concepción'
+    };
+    
+    try {
+        let resultado = null;
+        if (id) {
+            // Edición
+            resultado = await supabaseClient
+                .from('perfiles_operadores')
+                .update(payload)
+                .eq('id', id);
+        } else {
+            // Creación
+            resultado = await supabaseClient
+                .from('perfiles_operadores')
+                .insert([payload]);
+        }
+
+        if (resultado.error) {
+            alert("Error al guardar funcionario: " + resultado.error.message);
+            return;
+        }
+
+        alert(id ? "Funcionario actualizado con éxito." : "Funcionario creado con éxito.");
+        window.cancelarEdicionOperador();
+        window.renderPerfilesCrud();
+    } catch (err) {
+        console.error("Error en procesarCrudOperador:", err);
+        alert("Ocurrió un error al guardar el registro.");
+    }
+};
+
+// Cargar datos en el formulario para editar
+window.iniciarEditarOperador = function(id) {
+    const op = cacheOperadoresCrud.find(o => o.id === id);
+    if (!op) return;
+
+    document.getElementById('crud-op-id').value = op.id;
+    document.getElementById('crud-op-nombre').value = op.nombre_completo;
+    document.getElementById('crud-op-rut').value = '11.222.333-k'; // Dummy
+    document.getElementById('crud-op-grado').value = op.grado;
+    document.getElementById('crud-op-correo').value = `${op.nombre_completo.toLowerCase().replace(/ /g, '.')}@carabineros.cl`;
+    document.getElementById('crud-op-placa').value = op.identificacion_placa;
+    
+    // Asignar rol simulado según placa
+    if (op.identificacion_placa.includes('INT') || op.nombre_completo.toLowerCase().includes('interprete')) {
+        document.getElementById('crud-op-rol').value = 'INTERPRETE';
+    } else {
+        document.getElementById('crud-op-rol').value = 'OPERADOR';
+    }
+
+    document.getElementById('crud-form-titulo').innerText = `🛡️ Editar Funcionario`;
+    document.getElementById('btn-crud-op-submit').innerText = `💾 Guardar Cambios`;
+    document.getElementById('btn-crud-op-cancel').style.display = "block";
+};
+
+// Limpiar formulario y cancelar edición
+window.cancelarEdicionOperador = function() {
+    document.getElementById('crud-op-id').value = "";
+    document.getElementById('crud-op-nombre').value = "";
+    document.getElementById('crud-op-rut').value = "";
+    document.getElementById('crud-op-grado').value = "";
+    document.getElementById('crud-op-correo').value = "";
+    document.getElementById('crud-op-placa').value = "";
+    document.getElementById('crud-op-rol').value = "OPERADOR";
+
+    document.getElementById('crud-form-titulo').innerText = `🛡️ Registrar Nuevo Funcionario`;
+    document.getElementById('btn-crud-op-submit').innerText = `💾 Guardar Registro`;
+    document.getElementById('btn-crud-op-cancel').style.display = "none";
+};
+
+// Eliminar funcionario
+window.eliminarOperador = async function(id) {
+    const confirmar = confirm("¿Está seguro de dar de baja a este funcionario de la dotación active?");
+    if (!confirmar) return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('perfiles_operadores')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            alert("Error al dar de baja al funcionario: " + error.message);
+            return;
+        }
+
+        alert("Funcionario dado de baja de la dotación con éxito.");
+        window.renderPerfilesCrud();
+    } catch (err) {
+        console.error("Error en eliminarOperador:", err);
+        alert("Ocurrió un error al eliminar el funcionario.");
+    }
+};
+
+/**
+ * 📹 SIMULACIÓN INTERACTIVA DE VIDEOLLAMADA TRILATERAL (HU-03 / LEY 21719)
+ */
+let simVideoCallInterval = null;
+let simVideoCallStep = 0;
+let isSimulatingVideoCall = false;
+
+const dialogosSimulacion = [
+    {
+        autor: "María González (Ciudadano Sordo)",
+        texto: "[LSCh] Hola, necesito ayuda urgente. Hay una persona sospechosa merodeando frente a mi local comercial.",
+        subtitulo: "🤟 [María González]: Hola, necesito ayuda urgente. Hay un sospechoso merodeando frente a mi local comercial."
+    },
+    {
+        autor: "Subt. Carla Jara (Intérprete)",
+        texto: "Recibido María. Sargento Pérez, la ciudadana reporta sospechoso merodeando en calle Barros Arana 450.",
+        subtitulo: "🎙️ [Intérprete]: Recibido María. Sargento Pérez, la ciudadana reporta sospechoso merodeando en calle Barros Arana 450."
+    },
+    {
+        autor: "Sargento Pérez (Operador)",
+        texto: "Entendido. Estoy visualizando el cuadrante. Procedo a despachar la patrulla Z-8942 de inmediato.",
+        subtitulo: "👮 [Operador]: Entendido. Estoy visualizando el cuadrante. Procedo a despachar la patrulla Z-8942 de inmediato."
+    },
+    {
+        autor: "Subt. Carla Jara (Intérprete)",
+        texto: "[LSCh] María, Carabineros va en camino. La patrulla Z-8942 fue derivada y va en camino.",
+        subtitulo: "🎙️ [Intérprete]: María, Carabineros va en camino. La patrulla Z-8942 fue derivada."
+    },
+    {
+        autor: "María González (Ciudadano Sordo)",
+        texto: "[LSCh] Muchas gracias. Esperaré resguardada dentro del local comercial.",
+        subtitulo: "🤟 [María González]: Muchas gracias. Esperaré resguardada dentro del local."
+    }
+];
+
+window.toggleVideoCallSimulation = function() {
+    const btn = document.getElementById('btn-iniciar-sim-videollamada');
+    const labelStatus = document.getElementById('video-live-status-label');
+    const subtitulos = document.getElementById('subtitulos-conferencia');
+    const placeholder = document.getElementById('video-chat-placeholder');
+    const transcripcion = document.getElementById('video-chat-transcripcion');
+
+    // Cambiar filtros visuales a activo (luminosidad normal)
+    document.getElementById('video-ciudadano').style.filter = "brightness(1)";
+    document.getElementById('video-interprete').style.filter = "brightness(1)";
+    document.getElementById('video-operador').style.filter = "brightness(1)";
+
+    // Quitar emoji de silenciado
+    document.getElementById('sim-indicador-pfp-1').style.display = "none";
+    document.getElementById('sim-indicador-pfp-2').style.display = "none";
+    document.getElementById('sim-indicador-pfp-3').style.display = "none";
+
+    if (isSimulatingVideoCall) {
+        // Pausar
+        clearInterval(simVideoCallInterval);
+        isSimulatingVideoCall = false;
+        btn.innerText = "📞 Continuar Simulación";
+        btn.style.background = "#3b82f6";
+        labelStatus.innerText = "PAUSADO";
+        labelStatus.style.color = "#ff9f43";
+        return;
+    }
+
+    // Iniciar
+    isSimulatingVideoCall = true;
+    btn.innerText = "⏸️ Pausar Simulación";
+    btn.style.background = "#f59e0b";
+    labelStatus.innerText = "EN VIVO";
+    labelStatus.style.color = "#10b981";
+    subtitulos.style.display = "block";
+    
+    if (placeholder) placeholder.style.display = "none";
+
+    const reproducirPaso = () => {
+        if (simVideoCallStep >= dialogosSimulacion.length) {
+            clearInterval(simVideoCallInterval);
+            subtitulos.innerText = "[Enlace Trilateral Finalizado Con Excesivo Cumplimiento de Protocolo]";
+            btn.innerText = "📞 Iniciar Simulación Trilateral";
+            btn.style.background = "#10b981";
+            isSimulatingVideoCall = false;
+            simVideoCallStep = 0;
+            return;
+        }
+
+        const diag = dialogosSimulacion[simVideoCallStep];
+        
+        // Animamos los subtítulos en pantalla
+        subtitulos.innerText = diag.subtitulo;
+        
+        // Agregamos a la transcripción lateral
+        const p = document.createElement('p');
+        p.style.margin = "6px 0";
+        p.style.fontSize = "0.85rem";
+        p.innerHTML = `<b style="color:#004d35;">${diag.autor}:</b> ${diag.texto}`;
+        transcripcion.appendChild(p);
+        transcripcion.scrollTop = transcripcion.scrollHeight;
+
+        simVideoCallStep++;
+    };
+
+    // Reproducir el primer paso inmediatamente
+    reproducirPaso();
+    simVideoCallInterval = setInterval(reproducirPaso, 4000);
+};
+
+window.finalizarSimulacionVideoCall = function() {
+    clearInterval(simVideoCallInterval);
+    isSimulatingVideoCall = false;
+    simVideoCallStep = 0;
+
+    // Resetear filtros
+    document.getElementById('video-ciudadano').style.filter = "brightness(0.45)";
+    document.getElementById('video-interprete').style.filter = "brightness(0.45)";
+    document.getElementById('video-operador').style.filter = "brightness(0.45)";
+
+    // Mostrar emojis de silenciado
+    document.getElementById('sim-indicador-pfp-1').style.display = "flex";
+    document.getElementById('sim-indicador-pfp-2').style.display = "flex";
+    document.getElementById('sim-indicador-pfp-3').style.display = "flex";
+
+    // Resetear UI
+    const btn = document.getElementById('btn-iniciar-sim-videollamada');
+    btn.innerText = "📞 Iniciar Simulación Trilateral";
+    btn.style.background = "#10b981";
+
+    const labelStatus = document.getElementById('video-live-status-label');
+    labelStatus.innerText = "EN ESPERA";
+    labelStatus.style.color = "#ff9f43";
+
+    const subtitulos = document.getElementById('subtitulos-conferencia');
+    subtitulos.style.display = "none";
+    subtitulos.innerText = "[Enlace Trilateral Conectado - Esperando Audio/Señas...]";
+
+    const transcripcion = document.getElementById('video-chat-transcripcion');
+    transcripcion.innerHTML = `<p style="font-style: italic; margin:0;" id="video-chat-placeholder">Los diálogos transcritos aparecerán aquí durante la simulación...</p>`;
+
+    alert("Enlace trilateral cerrado correctamente.");
+};
+
+/**
+ * 💬 CHAT DE EMERGENCIA BIDIRECCIONAL EN TIEMPO REAL (DASHBOARD CENTRAL)
+ */
+let dashboardChatChannel = null;
+
+window.inicializarChatDashboard = async function(alertaId) {
+    console.log("🟢 Inicializando Chat Dashboard para Alerta:", alertaId);
+    const historial = document.getElementById('dashboard-chat-historial');
+    if (!historial) return;
+
+    try {
+        // 1. Cargar mensajes previos de la base de datos
+        const { data: mensajes, error } = await supabaseClient
+            .from('mensajes_chat')
+            .select('*')
+            .eq('alerta_id', alertaId)
+            .order('creado_al', { ascending: true });
+
+        if (error) throw error;
+
+        historial.innerHTML = "";
+        if (!mensajes || mensajes.length === 0) {
+            historial.innerHTML = `<p style="font-style: italic; color: #94a3b8; text-align: center; margin-top: 50px; font-size: 0.8rem; width: 100%;">No hay mensajes en esta emergencia. Esperando interacción del ciudadano sordo.</p>`;
+        } else {
+            mensajes.forEach(msg => {
+                window.agregarMensajeBurbujaDashboardHTML(msg.remitente, msg.mensaje);
+            });
+        }
+        historial.scrollTop = historial.scrollHeight;
+
+        // 2. Suscribirse al canal en tiempo real
+        if (dashboardChatChannel) {
+            dashboardChatChannel.unsubscribe();
+        }
+
+        dashboardChatChannel = supabaseClient
+            .channel(`dashboard_chat_${alertaId}`)
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'mensajes_chat',
+                filter: `alerta_id=eq.${alertaId}`
+            }, (payload) => {
+                console.log("💬 NUEVO MENSAJE CHAT RECIBIDO EN DASHBOARD:", payload.new);
+                window.agregarMensajeBurbujaDashboardDashboardHTML(payload.new.remitente, payload.new.mensaje);
+            })
+            .subscribe();
+
+        // 3. Bloquear chat si el estado es RESUELTO
+        const { data: alerta } = await supabaseClient
+            .from('alertas_sos')
+            .select('estado')
+            .eq('id', alertaId)
+            .single();
+
+        if (alerta && alerta.estado === 'RESUELTO') {
+            const input = document.getElementById('dashboard-chat-input');
+            if (input) {
+                input.disabled = true;
+                input.placeholder = "[Chat Finalizado y Archivado]";
+            }
+        }
+    } catch (err) {
+        console.error("Error al inicializar chat dashboard:", err);
+    }
+};
+
+// Función auxiliar para agregar burbuja
+window.agregarMensajeBurbujaDashboardDashboardHTML = function(remitente, texto) {
+    window.agregarMensajeBurbujaDashboardHTML(remitente, texto);
+};
+
+window.agregarMensajeBurbujaDashboardHTML = function(remitente, texto) {
+    const historial = document.getElementById('dashboard-chat-historial');
+    if (!historial) return;
+
+    if (historial.innerText.includes("No hay mensajes en esta emergencia")) {
+        historial.innerHTML = "";
+    }
+
+    const container = document.createElement('div');
+    container.style.width = "100%";
+    container.style.display = "flex";
+    container.style.justifyContent = (remitente === 'central') ? "flex-end" : "flex-start";
+    container.style.margin = "4px 0";
+
+    const bubble = document.createElement('div');
+    bubble.style.maxWidth = "75%";
+    bubble.style.borderRadius = "12px";
+    bubble.style.padding = "8px 12px";
+    bubble.style.fontSize = "0.8rem";
+    bubble.style.lineHeight = "1.4";
+    bubble.style.wordBreak = "break-word";
+
+    if (remitente === 'central') {
+        bubble.style.background = "var(--verde-carabinero)";
+        bubble.style.color = "white";
+        bubble.style.borderBottomRightRadius = "2px";
+    } else {
+        bubble.style.background = "#e2e8f0";
+        bubble.style.color = "var(--texto-oscuro)";
+        bubble.style.borderBottomLeftRadius = "2px";
+    }
+
+    bubble.innerText = texto;
+    container.appendChild(bubble);
+    historial.appendChild(container);
+    historial.scrollTop = historial.scrollHeight;
+};
+
+window.enviarMensajeDashboard = async function(alertaId, rutCiudadano) {
+    const input = document.getElementById('dashboard-chat-input');
+    if (!input) return;
+    const texto = input.value.trim();
+    if (!texto) return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('mensajes_chat')
+            .insert([
+                {
+                    alerta_id: alertaId,
+                    rut_ciudadano: rutCiudadano,
+                    remitente: 'central',
+                    mensaje: texto
+                }
+            ]);
+
+        if (error) throw error;
+        input.value = "";
+        console.log("✅ Mensaje de central enviado:", texto);
+    } catch (err) {
+        console.error("Error al enviar mensaje desde Dashboard:", err);
+        alert("Error de conexión al enviar el mensaje.");
     }
 };
 
