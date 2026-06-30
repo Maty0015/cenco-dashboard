@@ -920,8 +920,74 @@ window.renderPerfilesCrud = async function() {
             }).join('');
         }
 
+        // 3. Cargar y renderizar ciudadanos para anti-pitanza
+        const { data: ciudadanos, error: errCiu } = await supabaseClient
+            .from('perfiles_ciudadanos')
+            .select('nombre_completo, rut, correo, es_bloqueado')
+            .order('nombre_completo', { ascending: true });
+
+        const ciuTbody = document.getElementById('crud-tabla-ciudadanos-body');
+        if (errCiu || !ciudadanos) {
+            ciuTbody.innerHTML = `<tr><td colspan="5" style="padding:20px; text-align:center; color:var(--texto-mutado);">Error al cargar perfiles de ciudadanos.</td></tr>`;
+            return;
+        }
+
+        if (ciudadanos.length === 0) {
+            ciuTbody.innerHTML = `<tr><td colspan="5" style="padding:20px; text-align:center; color:var(--texto-mutado);">No hay ciudadanos registrados.</td></tr>`;
+        } else {
+            ciuTbody.innerHTML = ciudadanos.map(ciu => {
+                const estadoBadgeColor = ciu.es_bloqueado ? '#ef4444' : '#10b981';
+                const estadoLabel = ciu.es_bloqueado ? 'Bloqueado' : 'Activo';
+                const actionButtonText = ciu.es_bloqueado ? '✅ Desbloquear' : '🚫 Bloquear';
+                const actionButtonBg = ciu.es_bloqueado ? '#10b981' : '#ef4444';
+                const nuevoEstado = !ciu.es_bloqueado;
+
+                return `
+                    <tr style="border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:12px 5px; font-weight:700; color:var(--texto-oscuro);">${ciu.nombre_completo}</td>
+                        <td style="padding:12px 5px; font-family:monospace; color:var(--texto-oscuro);">${ciu.rut}</td>
+                        <td style="padding:12px 5px; color:var(--texto-mutated);">${ciu.correo}</td>
+                        <td style="padding:12px 5px; text-align:center;">
+                            <span style="background:${estadoBadgeColor}15; color:${estadoBadgeColor}; font-size:0.65rem; font-weight:bold; padding:2px 6px; border-radius:4px; text-transform:uppercase;">
+                                ${estadoLabel}
+                            </span>
+                        </td>
+                        <td style="padding:12px 5px; text-align:center;">
+                            <button onclick="window.toggleBloqueoCiudadano('${ciu.rut}', ${nuevoEstado})" style="background:${actionButtonBg}; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; cursor:pointer;">
+                                ${actionButtonText}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
     } catch (err) {
         console.error("Error en renderPerfilesCrud:", err);
+    }
+};
+
+window.toggleBloqueoCiudadano = async function(rut, nuevoEstado) {
+    const actionName = nuevoEstado ? "bloquear" : "desbloquear";
+    const confirmar = confirm(`¿Está seguro de que desea ${actionName} al ciudadano con RUT ${rut}?`);
+    if (!confirmar) return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('perfiles_ciudadanos')
+            .update({ es_bloqueado: nuevoEstado })
+            .eq('rut', rut);
+
+        if (error) {
+            alert(`Error al actualizar estado del ciudadano: ${error.message}`);
+            return;
+        }
+
+        alert(`Estado actualizado con éxito. El ciudadano ha sido ${nuevoEstado ? 'bloqueado' : 'desbloqueado'}.`);
+        window.renderPerfilesCrud();
+    } catch (err) {
+        console.error("Error en toggleBloqueoCiudadano:", err);
+        alert("Ocurrió un error inesperado al procesar la solicitud.");
     }
 };
 

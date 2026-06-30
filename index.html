@@ -342,6 +342,27 @@
                                 <h3 style="font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px; color: var(--texto-oscuro);">🗺️ Plan Cuadrante (Comisaría Concepción)</h3>
                                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;" id="crud-cuadrantes-lista"></div>
                             </div>
+
+                            <!-- Tabla de Ciudadanos y Bloqueos (Anti-Pitanza) -->
+                            <div style="background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                                <h3 style="font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px; color: var(--texto-oscuro);">🚫 Control de Usuarios Ciudadanos (Sistema Anti-Pitanza)</h3>
+                                <div style="overflow-x:auto;">
+                                    <table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:left;">
+                                        <thead>
+                                            <tr style="border-bottom:2px solid #e2e8f0; color:var(--texto-mutated); font-weight:bold;">
+                                                <th style="padding:10px 5px;">Nombre Ciudadano</th>
+                                                <th style="padding:10px 5px;">RUT</th>
+                                                <th style="padding:10px 5px;">Correo</th>
+                                                <th style="padding:10px 5px; text-align:center; width: 100px;">Estado</th>
+                                                <th style="padding:10px 5px; text-align:center; width: 120px;">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="crud-tabla-ciudadanos-body">
+                                            <tr><td colspan="5" style="padding:20px; text-align:center; color:var(--texto-mutado);">Cargando ciudadanos...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
